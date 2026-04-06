@@ -12,6 +12,7 @@ import {IGraphTallyCollector} from "@graphprotocol/horizon/interfaces/IGraphTall
 import {IHorizonStaking} from "@graphprotocol/horizon/interfaces/IHorizonStaking.sol";
 
 import {IRPCDataService} from "./interfaces/IRPCDataService.sol";
+import {StateProofVerifier} from "./lib/StateProofVerifier.sol";
 
 /// @title RPCDataService
 /// @notice Decentralised JSON-RPC data service built on The Graph Protocol's Horizon framework.
@@ -46,6 +47,13 @@ contract RPCDataService is Ownable, DataService, DataServiceFees, DataServicePau
     /// @notice Stake locked per GRT of fees collected. Matches SubgraphService.
     uint256 public constant STAKE_TO_FEES_RATIO = 5;
 
+    /// @notice GRT slashed per successful Tier 1 fraud proof.
+    /// Capped by the provider's actual provision if it is smaller.
+    uint256 public constant SLASH_AMOUNT = 10_000e18;
+
+    /// @notice Fraction of slashed tokens awarded to the challenger as a bounty (PPM, 50%).
+    uint256 public constant CHALLENGER_REWARD_PPM = 500_000;
+
     // -------------------------------------------------------------------------
     // Storage
     // -------------------------------------------------------------------------
@@ -66,6 +74,13 @@ contract RPCDataService is Ownable, DataService, DataServiceFees, DataServicePau
 
     /// @notice GraphTallyCollector used to redeem TAP receipts on-chain.
     IGraphTallyCollector private immutable GRAPH_TALLY_COLLECTOR;
+
+    /// @notice Trusted state roots: blockHash → stateRoot.
+    /// @dev Populated by governance/oracle after verifying an Ethereum block header.
+    ///      Required because Arbitrum contracts cannot read L1 block hashes natively.
+    mapping(bytes32 => bytes32) public trustedStateRoots;
+
+    event TrustedStateRootSet(bytes32 indexed blockHash, bytes32 stateRoot);
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -114,10 +129,16 @@ contract RPCDataService is Ownable, DataService, DataServiceFees, DataServicePau
     }
 
     /// @inheritdoc IRPCDataService
-    function setMinThawingPeriod(uint64) external onlyOwner {
+    function setMinThawingPeriod(uint64) external view onlyOwner {
         // Phase 2: allow governance to adjust via storage variable.
         // For Phase 1, MIN_THAWING_PERIOD is an immutable constant.
         revert("setMinThawingPeriod: not implemented in Phase 1");
+    }
+
+    /// @inheritdoc IRPCDataService
+    function setTrustedStateRoot(bytes32 blockHash, bytes32 stateRoot) external onlyOwner {
+        trustedStateRoots[blockHash] = stateRoot;
+        emit TrustedStateRootSet(blockHash, stateRoot);
     }
 
     // -------------------------------------------------------------------------
@@ -286,13 +307,65 @@ contract RPCDataService is Ownable, DataService, DataServiceFees, DataServicePau
 
     /// @notice Submit a Tier 1 fraud proof to slash a provider.
     ///
-    /// Phase 1: NOT implemented. Tier 1 disputes require Merkle proof verification
-    /// (EIP-1186 eth_getProof) against a trusted block header. Will be implemented
-    /// in Phase 2 once the block header trust service is in place.
+    /// The challenger supplies an EIP-1186 Merkle proof showing that the state value
+    /// at the given block hash differs from what the provider claimed to serve.
+    /// The block's state root must have been registered by governance via
+    /// `setTrustedStateRoot` before the call.
     ///
-    /// @dev data would be ABI-encoded (request, signedResponse, merkleProof, blockHeader).
-    function slash(address, bytes calldata) external override {
-        revert SlashNotImplemented();
+    /// On success: `SLASH_AMOUNT` GRT is removed from the provider's provision;
+    /// 50% is awarded to the challenger and the remainder goes to the protocol treasury.
+    ///
+    /// @param serviceProvider The provider to slash.
+    /// @param data            ABI-encoded `Tier1FraudProof`.
+    function slash(address serviceProvider, bytes calldata data)
+        external
+        override
+        whenNotPaused
+    {
+        if (!registeredProviders[serviceProvider]) revert ProviderNotRegistered(serviceProvider);
+
+        Tier1FraudProof memory proof = abi.decode(data, (Tier1FraudProof));
+
+        bytes32 stateRoot = trustedStateRoots[proof.blockHash];
+        if (stateRoot == bytes32(0)) revert UntrustedBlockHash(proof.blockHash);
+
+        // Verify account proof and decode state.
+        StateProofVerifier.Account memory acc = StateProofVerifier.verifyAccount(
+            stateRoot,
+            proof.account,
+            proof.accountProof
+        );
+
+        // Resolve actual on-chain value for the disputed field.
+        uint256 actualValue;
+        if (proof.disputeType == DisputeType.Balance) {
+            actualValue = acc.balance;
+        } else if (proof.disputeType == DisputeType.Nonce) {
+            actualValue = acc.nonce;
+        } else {
+            // Storage dispute — derive value from the account's storageRoot.
+            bytes32 storageValue = StateProofVerifier.verifyStorage(
+                acc.storageRoot,
+                proof.storageSlot,
+                proof.storageProof
+            );
+            actualValue = uint256(storageValue);
+        }
+
+        // Revert if the proof shows the provider was correct.
+        if (actualValue == proof.claimedValue) {
+            revert InvalidFraudProof("claimed value matches on-chain state");
+        }
+
+        // Compute slash amount — capped by the provider's actual provision.
+        IHorizonStaking.Provision memory provision =
+            _graphStaking().getProvision(serviceProvider, address(this));
+        uint256 tokens = provision.tokens < SLASH_AMOUNT ? provision.tokens : SLASH_AMOUNT;
+        uint256 tokensVerifier = tokens * CHALLENGER_REWARD_PPM / 1_000_000;
+
+        _graphStaking().slash(serviceProvider, tokens, tokensVerifier, proof.challenger);
+
+        emit FraudProofSubmitted(serviceProvider, proof.challenger, tokens);
     }
 
     /// @notice Accept pending changes to this provider's provision parameters.

@@ -35,6 +35,27 @@ interface IRPCDataService {
         bool active;
     }
 
+    /// @notice The on-chain field that the challenger claims was mis-reported.
+    enum DisputeType {
+        Balance, // provider returned wrong eth_getBalance
+        Nonce,   // provider returned wrong eth_getTransactionCount
+        Storage  // provider returned wrong eth_getStorageAt
+    }
+
+    /// @notice Tier 1 fraud proof: EIP-1186 Merkle proof showing a provider's response
+    ///         contradicts the canonical on-chain state at a trusted block.
+    struct Tier1FraudProof {
+        address challenger;
+        uint64  chainId;
+        address account;
+        bytes32 blockHash;
+        bytes32 storageSlot;    // Zero unless disputeType == Storage.
+        bytes[] accountProof;
+        bytes[] storageProof;   // Empty unless disputeType == Storage.
+        uint256 claimedValue;   // The (incorrect) value the provider served.
+        DisputeType disputeType;
+    }
+
     // -------------------------------------------------------------------------
     // Events
     // -------------------------------------------------------------------------
@@ -65,7 +86,7 @@ interface IRPCDataService {
     error RegistrationNotFound(address provider, uint64 chainId, CapabilityTier tier);
     error InvalidFraudProof(string reason);
     error InvalidPaymentType();
-    error SlashNotImplemented();
+    error UntrustedBlockHash(bytes32 blockHash);
 
     // -------------------------------------------------------------------------
     // Governance (owner-only)
@@ -85,6 +106,14 @@ interface IRPCDataService {
 
     /// @notice Update the minimum thawing period.
     function setMinThawingPeriod(uint64 period) external;
+
+    /// @notice Register a trusted state root for a given block hash.
+    /// @dev Called by governance or an authorised oracle after verifying the block header.
+    ///      On Arbitrum, L1 block hashes are not natively available, so we rely on a
+    ///      trusted oracle. The stateRoot is then used to validate EIP-1186 MPT proofs.
+    /// @param blockHash  The Ethereum block hash.
+    /// @param stateRoot  The corresponding EIP-1186 state root.
+    function setTrustedStateRoot(bytes32 blockHash, bytes32 stateRoot) external;
 
     // -------------------------------------------------------------------------
     // Provider operations
