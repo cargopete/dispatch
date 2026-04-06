@@ -1,0 +1,46 @@
+# drpc-gateway configuration
+# Copy to docker/gateway.toml and fill in your values before running.
+#
+# docker-compose mounts this file as /etc/drpc/gateway.toml inside the container.
+# Override the path with: DRPC_GATEWAY_CONFIG=/path/to/gateway.toml
+
+[gateway]
+host = "0.0.0.0"
+port = 8080
+
+[tap]
+# 32-byte hex ECDSA private key — gateway signs TAP receipts sent to indexers.
+# Use a dedicated key. Corresponding address must be authorised in each indexer's
+# config.toml [tap].authorized_senders list.
+signer_private_key = "0x0000000000000000000000000000000000000000000000000000000000000000"
+
+# RPCDataService contract address.
+data_service_address = "0x0000000000000000000000000000000000000000"
+
+# EIP-712 domain — must match the deployed GraphTallyCollector.
+eip712_domain_name = "GraphTallyCollector"
+
+# Arbitrum One (default). Override for other networks.
+# eip712_chain_id = 42161
+# eip712_verifying_contract = "0x8f69F5C07477Ac46FBc491B1E6D91E2be0111A9e"
+
+# GRT wei per compute unit (default ≈ $40/M requests at $0.09/GRT).
+# base_price_per_cu = 4000000000000
+
+[qos]
+probe_interval_secs  = 10
+latency_weight       = 0.30
+availability_weight  = 0.30
+freshness_weight     = 0.25
+# How many providers to dispatch to concurrently (first response wins).
+concurrent_k         = 3
+
+# ── Providers ─────────────────────────────────────────────────────────────
+# Static provider list (Phase 1).
+# Phase 2: replace with dynamic discovery from the RPC network subgraph.
+#
+# Add one [[providers]] block per indexer.
+[[providers]]
+address  = "0x0000000000000000000000000000000000000000"  # indexer's on-chain address
+endpoint = "http://drpc-service:7700"                    # base URL of drpc-service
+chains   = [1, 42161]

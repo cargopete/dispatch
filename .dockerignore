@@ -1,0 +1,7 @@
+target/
+contracts/lib/
+contracts/out/
+contracts/cache/
+.git/
+.github/
+docker/*.toml

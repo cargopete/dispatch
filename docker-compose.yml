@@ -1,0 +1,51 @@
+services:
+  # ── Indexer service (one per node) ────────────────────────────────────────
+  drpc-service:
+    build:
+      context: .
+      target: service
+    ports:
+      - "7700:7700"
+    volumes:
+      - ./docker/config.toml:/etc/drpc/config.toml:ro
+    environment:
+      DRPC_CONFIG: /etc/drpc/config.toml
+      RUST_LOG: info
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── Gateway (routes requests to indexers) ─────────────────────────────────
+  drpc-gateway:
+    build:
+      context: .
+      target: gateway
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./docker/gateway.toml:/etc/drpc/gateway.toml:ro
+    environment:
+      DRPC_GATEWAY_CONFIG: /etc/drpc/gateway.toml
+      RUST_LOG: info
+    restart: unless-stopped
+
+  # ── PostgreSQL (optional — drpc-service persists TAP receipts here) ───────
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: drpc
+      POSTGRES_PASSWORD: drpc
+      POSTGRES_DB: drpc
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U drpc"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres_data:
