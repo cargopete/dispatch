@@ -30,11 +30,11 @@ library StateProofVerifier {
     /// @param account    Ethereum address whose state is being proven.
     /// @param accountProof  Array of RLP-encoded trie nodes from `eth_getProof`.
     /// @return acc  Decoded account fields.
-    function verifyAccount(
-        bytes32 stateRoot,
-        address account,
-        bytes[] memory accountProof
-    ) internal pure returns (Account memory acc) {
+    function verifyAccount(bytes32 stateRoot, address account, bytes[] memory accountProof)
+        internal
+        pure
+        returns (Account memory acc)
+    {
         // Account trie key = keccak256 of the 20-byte address.
         bytes memory key = abi.encodePacked(keccak256(abi.encodePacked(account)));
         bytes memory rlpAccount = TrieProof.traverse(stateRoot, key, accountProof);
@@ -46,11 +46,11 @@ library StateProofVerifier {
     /// @param slot         The 32-byte storage slot key.
     /// @param storageProof Array of RLP-encoded trie nodes from `eth_getProof`.
     /// @return value  The 32-byte storage value (zero-padded).
-    function verifyStorage(
-        bytes32 storageRoot,
-        bytes32 slot,
-        bytes[] memory storageProof
-    ) internal pure returns (bytes32 value) {
+    function verifyStorage(bytes32 storageRoot, bytes32 slot, bytes[] memory storageProof)
+        internal
+        pure
+        returns (bytes32 value)
+    {
         // Storage trie key = keccak256 of the 32-byte slot (big-endian).
         bytes memory key = abi.encodePacked(keccak256(abi.encode(slot)));
         bytes memory rlpValue = TrieProof.traverse(storageRoot, key, storageProof);
@@ -63,9 +63,9 @@ library StateProofVerifier {
     function decodeAccount(bytes memory rlpAccount) internal pure returns (Account memory acc) {
         Memory.Slice[] memory fields = rlpAccount.decodeList();
         require(fields.length == 4, "StateProofVerifier: invalid account RLP");
-        acc.nonce       = fields[0].readUint256();
-        acc.balance     = fields[1].readUint256();
+        acc.nonce = fields[0].readUint256();
+        acc.balance = fields[1].readUint256();
         acc.storageRoot = fields[2].readBytes32();
-        acc.codeHash    = fields[3].readBytes32();
+        acc.codeHash = fields[3].readBytes32();
     }
 }

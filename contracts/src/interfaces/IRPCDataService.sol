@@ -17,10 +17,10 @@ interface IRPCDataService {
 
     /// Capability tiers determine what infrastructure and methods a provider offers.
     enum CapabilityTier {
-        Standard,  // 0 — full node, last 128 blocks of state
-        Archive,   // 1 — full historical state
-        Debug,     // 2 — debug_* and trace_* methods
-        WebSocket  // 3 — real-time eth_subscribe
+        Standard, // 0 — full node, last 128 blocks of state
+        Archive, // 1 — full historical state
+        Debug, // 2 — debug_* and trace_* methods
+        WebSocket // 3 — real-time eth_subscribe
     }
 
     struct ChainConfig {
@@ -38,21 +38,21 @@ interface IRPCDataService {
     /// @notice The on-chain field that the challenger claims was mis-reported.
     enum DisputeType {
         Balance, // provider returned wrong eth_getBalance
-        Nonce,   // provider returned wrong eth_getTransactionCount
-        Storage  // provider returned wrong eth_getStorageAt
+        Nonce, // provider returned wrong eth_getTransactionCount
+        Storage // provider returned wrong eth_getStorageAt
     }
 
     /// @notice Tier 1 fraud proof: EIP-1186 Merkle proof showing a provider's response
     ///         contradicts the canonical on-chain state at a trusted block.
     struct Tier1FraudProof {
         address challenger;
-        uint64  chainId;
+        uint64 chainId;
         address account;
         bytes32 blockHash;
-        bytes32 storageSlot;    // Zero unless disputeType == Storage.
+        bytes32 storageSlot; // Zero unless disputeType == Storage.
         bytes[] accountProof;
-        bytes[] storageProof;   // Empty unless disputeType == Storage.
-        uint256 claimedValue;   // The (incorrect) value the provider served.
+        bytes[] storageProof; // Empty unless disputeType == Storage.
+        uint256 claimedValue; // The (incorrect) value the provider served.
         DisputeType disputeType;
     }
 
@@ -65,13 +65,9 @@ interface IRPCDataService {
     event ProviderRegistered(address indexed provider, string endpoint, string geoHash);
     event ProviderDeregistered(address indexed provider);
     event PaymentsDestinationSet(address indexed provider, address indexed destination);
-    event ServiceStarted(
-        address indexed provider, uint64 indexed chainId, CapabilityTier tier, string endpoint
-    );
+    event ServiceStarted(address indexed provider, uint64 indexed chainId, CapabilityTier tier, string endpoint);
     event ServiceStopped(address indexed provider, uint64 indexed chainId, CapabilityTier tier);
-    event FraudProofSubmitted(
-        address indexed provider, address indexed challenger, uint256 slashAmount
-    );
+    event FraudProofSubmitted(address indexed provider, address indexed challenger, uint256 slashAmount);
 
     // -------------------------------------------------------------------------
     // Errors
@@ -131,10 +127,7 @@ interface IRPCDataService {
 
     function isRegistered(address provider) external view returns (bool);
 
-    function getChainRegistrations(address provider)
-        external
-        view
-        returns (ChainRegistration[] memory);
+    function getChainRegistrations(address provider) external view returns (ChainRegistration[] memory);
 
     function activeRegistrationCount(address provider) external view returns (uint256);
 

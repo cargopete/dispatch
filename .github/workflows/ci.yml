@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# ── Rust ──────────────────────────────────────────────────────────────────────
+
+jobs:
+  rust-fmt:
+    name: Rust / fmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - run: cargo fmt --all --check
+
+  rust-clippy:
+    name: Rust / clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: swatinem/rust-cache@v2
+      - run: cargo clippy --all-targets --all-features -- -D warnings
+
+  rust-test:
+    name: Rust / test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: swatinem/rust-cache@v2
+      - run: cargo test --all
+
+# ── Solidity ──────────────────────────────────────────────────────────────────
+
+  sol-fmt:
+    name: Solidity / fmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: foundry-rs/foundry-toolchain@v1
+      - run: forge fmt --check
+        working-directory: contracts
+
+  sol-test:
+    name: Solidity / test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: foundry-rs/foundry-toolchain@v1
+      - uses: actions/cache@v4
+        with:
+          path: contracts/cache
+          key: forge-${{ hashFiles('contracts/foundry.toml', 'contracts/src/**', 'contracts/test/**') }}
+          restore-keys: forge-
+      - run: forge test -vv
+        working-directory: contracts

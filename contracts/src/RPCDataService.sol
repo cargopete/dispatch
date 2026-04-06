@@ -5,8 +5,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 import {DataService} from "@graphprotocol/horizon/data-service/DataService.sol";
 import {DataServiceFees} from "@graphprotocol/horizon/data-service/extensions/DataServiceFees.sol";
-import {DataServicePausable} from
-    "@graphprotocol/horizon/data-service/extensions/DataServicePausable.sol";
+import {DataServicePausable} from "@graphprotocol/horizon/data-service/extensions/DataServicePausable.sol";
 import {IGraphPayments} from "@graphprotocol/horizon/interfaces/IGraphPayments.sol";
 import {IGraphTallyCollector} from "@graphprotocol/horizon/interfaces/IGraphTallyCollector.sol";
 import {IHorizonStaking} from "@graphprotocol/horizon/interfaces/IHorizonStaking.sol";
@@ -109,8 +108,7 @@ contract RPCDataService is Ownable, DataService, DataServiceFees, DataServicePau
     /// @inheritdoc IRPCDataService
     function addChain(uint256 chainId, uint256 minProvisionTokens) external onlyOwner {
         supportedChains[chainId] = ChainConfig({
-            enabled: true,
-            minProvisionTokens: minProvisionTokens == 0 ? DEFAULT_MIN_PROVISION : minProvisionTokens
+            enabled: true, minProvisionTokens: minProvisionTokens == 0 ? DEFAULT_MIN_PROVISION : minProvisionTokens
         });
         emit ChainAdded(chainId, minProvisionTokens == 0 ? DEFAULT_MIN_PROVISION : minProvisionTokens);
     }
@@ -162,8 +160,7 @@ contract RPCDataService is Ownable, DataService, DataServiceFees, DataServicePau
         _checkProvisionTokens(serviceProvider);
         _checkProvisionParameters(serviceProvider, false);
 
-        (string memory endpoint, string memory geoHash, address dest) =
-            abi.decode(data, (string, string, address));
+        (string memory endpoint, string memory geoHash, address dest) = abi.decode(data, (string, string, address));
         registeredProviders[serviceProvider] = true;
         paymentsDestination[serviceProvider] = dest == address(0) ? serviceProvider : dest;
 
@@ -172,10 +169,7 @@ contract RPCDataService is Ownable, DataService, DataServiceFees, DataServicePau
 
     /// @notice Deregister as an RPC provider.
     /// @dev All chain registrations must be stopped first.
-    function deregister(address serviceProvider, bytes calldata)
-        external
-        onlyAuthorizedForProvision(serviceProvider)
-    {
+    function deregister(address serviceProvider, bytes calldata) external onlyAuthorizedForProvision(serviceProvider) {
         if (!registeredProviders[serviceProvider]) revert ProviderNotRegistered(serviceProvider);
         if (activeRegistrationCount(serviceProvider) > 0) revert ActiveRegistrationsExist(serviceProvider);
 
@@ -202,26 +196,19 @@ contract RPCDataService is Ownable, DataService, DataServiceFees, DataServicePau
     {
         if (!registeredProviders[serviceProvider]) revert ProviderNotRegistered(serviceProvider);
 
-        (uint64 chainId, uint8 tier, string memory endpoint) =
-            abi.decode(data, (uint64, uint8, string));
+        (uint64 chainId, uint8 tier, string memory endpoint) = abi.decode(data, (uint64, uint8, string));
 
         ChainConfig storage cfg = supportedChains[chainId];
         if (!cfg.enabled) revert ChainNotSupported(chainId);
 
         // Validate provision meets the per-chain minimum.
-        IHorizonStaking.Provision memory provision =
-            _graphStaking().getProvision(serviceProvider, address(this));
+        IHorizonStaking.Provision memory provision = _graphStaking().getProvision(serviceProvider, address(this));
         if (provision.tokens < cfg.minProvisionTokens) {
             revert InsufficientProvision(cfg.minProvisionTokens, provision.tokens);
         }
 
         _providerChains[serviceProvider].push(
-            ChainRegistration({
-                chainId: chainId,
-                tier: CapabilityTier(tier),
-                endpoint: endpoint,
-                active: true
-            })
+            ChainRegistration({chainId: chainId, tier: CapabilityTier(tier), endpoint: endpoint, active: true})
         );
 
         emit ServiceStarted(serviceProvider, chainId, CapabilityTier(tier), endpoint);
@@ -259,11 +246,7 @@ contract RPCDataService is Ownable, DataService, DataServiceFees, DataServicePau
     /// @param paymentType Must be QueryFee for Phase 1.
     /// @param data ABI-encoded (SignedRAV, tokensToCollect).
     /// @return fees Total GRT collected by the service provider.
-    function collect(
-        address serviceProvider,
-        IGraphPayments.PaymentTypes paymentType,
-        bytes calldata data
-    )
+    function collect(address serviceProvider, IGraphPayments.PaymentTypes paymentType, bytes calldata data)
         external
         override
         whenNotPaused
@@ -278,10 +261,7 @@ contract RPCDataService is Ownable, DataService, DataServiceFees, DataServicePau
         (IGraphTallyCollector.SignedRAV memory signedRav, uint256 tokensToCollect) =
             abi.decode(data, (IGraphTallyCollector.SignedRAV, uint256));
 
-        require(
-            signedRav.rav.serviceProvider == serviceProvider,
-            "RPCDataService: RAV provider mismatch"
-        );
+        require(signedRav.rav.serviceProvider == serviceProvider, "RPCDataService: RAV provider mismatch");
 
         // Release any expired stake claims before locking new ones.
         _releaseStake(serviceProvider, 0);
@@ -293,8 +273,8 @@ contract RPCDataService is Ownable, DataService, DataServiceFees, DataServicePau
             paymentType,
             abi.encode(
                 signedRav,
-                uint256(0),                              // dataServiceCut=0 for Phase 1 (no curation)
-                paymentsDestination[serviceProvider]     // receiverDestination: where GRT lands
+                uint256(0), // dataServiceCut=0 for Phase 1 (no curation)
+                paymentsDestination[serviceProvider] // receiverDestination: where GRT lands
             ),
             tokensToCollect
         );
@@ -317,11 +297,7 @@ contract RPCDataService is Ownable, DataService, DataServiceFees, DataServicePau
     ///
     /// @param serviceProvider The provider to slash.
     /// @param data            ABI-encoded `Tier1FraudProof`.
-    function slash(address serviceProvider, bytes calldata data)
-        external
-        override
-        whenNotPaused
-    {
+    function slash(address serviceProvider, bytes calldata data) external override whenNotPaused {
         if (!registeredProviders[serviceProvider]) revert ProviderNotRegistered(serviceProvider);
 
         Tier1FraudProof memory proof = abi.decode(data, (Tier1FraudProof));
@@ -330,11 +306,8 @@ contract RPCDataService is Ownable, DataService, DataServiceFees, DataServicePau
         if (stateRoot == bytes32(0)) revert UntrustedBlockHash(proof.blockHash);
 
         // Verify account proof and decode state.
-        StateProofVerifier.Account memory acc = StateProofVerifier.verifyAccount(
-            stateRoot,
-            proof.account,
-            proof.accountProof
-        );
+        StateProofVerifier.Account memory acc =
+            StateProofVerifier.verifyAccount(stateRoot, proof.account, proof.accountProof);
 
         // Resolve actual on-chain value for the disputed field.
         uint256 actualValue;
@@ -344,11 +317,8 @@ contract RPCDataService is Ownable, DataService, DataServiceFees, DataServicePau
             actualValue = acc.nonce;
         } else {
             // Storage dispute — derive value from the account's storageRoot.
-            bytes32 storageValue = StateProofVerifier.verifyStorage(
-                acc.storageRoot,
-                proof.storageSlot,
-                proof.storageProof
-            );
+            bytes32 storageValue =
+                StateProofVerifier.verifyStorage(acc.storageRoot, proof.storageSlot, proof.storageProof);
             actualValue = uint256(storageValue);
         }
 
@@ -358,8 +328,7 @@ contract RPCDataService is Ownable, DataService, DataServiceFees, DataServicePau
         }
 
         // Compute slash amount — capped by the provider's actual provision.
-        IHorizonStaking.Provision memory provision =
-            _graphStaking().getProvision(serviceProvider, address(this));
+        IHorizonStaking.Provision memory provision = _graphStaking().getProvision(serviceProvider, address(this));
         uint256 tokens = provision.tokens < SLASH_AMOUNT ? provision.tokens : SLASH_AMOUNT;
         uint256 tokensVerifier = tokens * CHALLENGER_REWARD_PPM / 1_000_000;
 
@@ -389,12 +358,7 @@ contract RPCDataService is Ownable, DataService, DataServiceFees, DataServicePau
     }
 
     /// @inheritdoc IRPCDataService
-    function getChainRegistrations(address provider)
-        external
-        view
-        override
-        returns (ChainRegistration[] memory)
-    {
+    function getChainRegistrations(address provider) external view override returns (ChainRegistration[] memory) {
         return _providerChains[provider];
     }
 

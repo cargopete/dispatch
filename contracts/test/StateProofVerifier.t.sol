@@ -38,11 +38,7 @@ contract MockHorizonStakingForSlash {
         });
     }
 
-    function getProvision(address sp, address ds)
-        external
-        view
-        returns (IHorizonStakingTypes.Provision memory)
-    {
+    function getProvision(address sp, address ds) external view returns (IHorizonStakingTypes.Provision memory) {
         return provisions[sp][ds];
     }
 
@@ -52,9 +48,9 @@ contract MockHorizonStakingForSlash {
 
     function slash(address sp, uint256 tokens, uint256 verifier, address dest) external {
         lastSlashedProvider = sp;
-        lastSlashTokens     = tokens;
-        lastSlashVerifier   = verifier;
-        lastSlashDest       = dest;
+        lastSlashTokens = tokens;
+        lastSlashVerifier = verifier;
+        lastSlashDest = dest;
     }
 
     function acceptProvisionParameters(address) external {}
@@ -70,15 +66,15 @@ contract MockControllerForSlash {
     mapping(bytes32 => address) private _contracts;
 
     function init(address dummy) external {
-        _contracts[keccak256("GraphToken")]        = dummy;
-        _contracts[keccak256("Staking")]           = staking_;
-        _contracts[keccak256("GraphPayments")]     = dummy;
-        _contracts[keccak256("PaymentsEscrow")]    = dummy;
-        _contracts[keccak256("EpochManager")]      = dummy;
-        _contracts[keccak256("RewardsManager")]    = dummy;
+        _contracts[keccak256("GraphToken")] = dummy;
+        _contracts[keccak256("Staking")] = staking_;
+        _contracts[keccak256("GraphPayments")] = dummy;
+        _contracts[keccak256("PaymentsEscrow")] = dummy;
+        _contracts[keccak256("EpochManager")] = dummy;
+        _contracts[keccak256("RewardsManager")] = dummy;
         _contracts[keccak256("GraphTokenGateway")] = dummy;
-        _contracts[keccak256("GraphProxyAdmin")]   = dummy;
-        _contracts[keccak256("Curation")]          = dummy;
+        _contracts[keccak256("GraphProxyAdmin")] = dummy;
+        _contracts[keccak256("Curation")] = dummy;
     }
 
     function getContractProxy(bytes32 id) external view returns (address) {
@@ -102,17 +98,17 @@ contract DecodeAccountWrapper {
 
 contract StateProofVerifierTest is Test {
     DecodeAccountWrapper wrapper = new DecodeAccountWrapper();
+
     // -----------------------------------------------------------------------
     // decodeAccount — round-trip via OZ RLP encoder
     // -----------------------------------------------------------------------
 
     /// @dev Builds a 4-field RLP account list from raw values using the OZ encoder.
-    function _buildRlpAccount(
-        uint256 nonce,
-        uint256 balance,
-        bytes32 storageRoot,
-        bytes32 codeHash
-    ) internal pure returns (bytes memory) {
+    function _buildRlpAccount(uint256 nonce, uint256 balance, bytes32 storageRoot, bytes32 codeHash)
+        internal
+        pure
+        returns (bytes memory)
+    {
         RLP.Encoder memory enc = RLP.encoder();
         enc = RLP.push(enc, nonce);
         enc = RLP.push(enc, balance);
@@ -122,24 +118,24 @@ contract StateProofVerifierTest is Test {
     }
 
     function test_decodeAccount_roundtrip() public pure {
-        uint256 nonce       = 42;
-        uint256 balance     = 1_000e18;
+        uint256 nonce = 42;
+        uint256 balance = 1_000e18;
         bytes32 storageRoot = bytes32(uint256(0xdeadbeef));
-        bytes32 codeHash    = bytes32(uint256(0xcafebabe));
+        bytes32 codeHash = bytes32(uint256(0xcafebabe));
 
         bytes memory rlp = _buildRlpAccount(nonce, balance, storageRoot, codeHash);
         StateProofVerifier.Account memory acc = StateProofVerifier.decodeAccount(rlp);
 
-        assertEq(acc.nonce,       nonce);
-        assertEq(acc.balance,     balance);
+        assertEq(acc.nonce, nonce);
+        assertEq(acc.balance, balance);
         assertEq(acc.storageRoot, storageRoot);
-        assertEq(acc.codeHash,    codeHash);
+        assertEq(acc.codeHash, codeHash);
     }
 
     function test_decodeAccount_zeroNonce() public pure {
         bytes memory rlp = _buildRlpAccount(0, 0, bytes32(0), bytes32(0));
         StateProofVerifier.Account memory acc = StateProofVerifier.decodeAccount(rlp);
-        assertEq(acc.nonce,   0);
+        assertEq(acc.nonce, 0);
         assertEq(acc.balance, 0);
     }
 
@@ -158,14 +154,14 @@ contract SlashErrorPathTest is Test {
     RPCDataService public service;
     MockHorizonStakingForSlash public staking;
 
-    address public owner      = makeAddr("owner");
-    address public guardian   = makeAddr("guardian");
-    address public provider   = makeAddr("provider");
+    address public owner = makeAddr("owner");
+    address public guardian = makeAddr("guardian");
+    address public provider = makeAddr("provider");
     address public challenger = makeAddr("challenger");
 
     uint256 constant PROVISION = 25_000e18;
-    uint64  constant THAWING   = 14 days;
-    uint64  constant CHAIN_ID  = 1;
+    uint64 constant THAWING = 14 days;
+    uint64 constant CHAIN_ID = 1;
 
     function setUp() public {
         staking = new MockHorizonStakingForSlash();
@@ -194,15 +190,15 @@ contract SlashErrorPathTest is Test {
     address internal constant DISPUTED_ACCOUNT = address(0xacC0);
 
     function _emptyProof() internal view returns (IRPCDataService.Tier1FraudProof memory p) {
-        p.challenger   = challenger;
-        p.chainId      = CHAIN_ID;
-        p.account      = DISPUTED_ACCOUNT;
-        p.blockHash    = keccak256("block");
-        p.storageSlot  = bytes32(0);
+        p.challenger = challenger;
+        p.chainId = CHAIN_ID;
+        p.account = DISPUTED_ACCOUNT;
+        p.blockHash = keccak256("block");
+        p.storageSlot = bytes32(0);
         p.accountProof = new bytes[](0);
         p.storageProof = new bytes[](0);
         p.claimedValue = 999;
-        p.disputeType  = IRPCDataService.DisputeType.Balance;
+        p.disputeType = IRPCDataService.DisputeType.Balance;
     }
 
     // -----------------------------------------------------------------------
@@ -213,9 +209,7 @@ contract SlashErrorPathTest is Test {
         address unknown = makeAddr("unknown");
         IRPCDataService.Tier1FraudProof memory p = _emptyProof();
 
-        vm.expectRevert(
-            abi.encodeWithSelector(IRPCDataService.ProviderNotRegistered.selector, unknown)
-        );
+        vm.expectRevert(abi.encodeWithSelector(IRPCDataService.ProviderNotRegistered.selector, unknown));
         service.slash(unknown, abi.encode(p));
     }
 
@@ -223,9 +217,7 @@ contract SlashErrorPathTest is Test {
         IRPCDataService.Tier1FraudProof memory p = _emptyProof();
         // trustedStateRoots[p.blockHash] is zero — not set.
 
-        vm.expectRevert(
-            abi.encodeWithSelector(IRPCDataService.UntrustedBlockHash.selector, p.blockHash)
-        );
+        vm.expectRevert(abi.encodeWithSelector(IRPCDataService.UntrustedBlockHash.selector, p.blockHash));
         service.slash(provider, abi.encode(p));
     }
 
@@ -261,7 +253,7 @@ contract SlashErrorPathTest is Test {
     }
 
     function test_slashConstants() public view {
-        assertEq(service.SLASH_AMOUNT(),           10_000e18);
-        assertEq(service.CHALLENGER_REWARD_PPM(),  500_000);
+        assertEq(service.SLASH_AMOUNT(), 10_000e18);
+        assertEq(service.CHALLENGER_REWARD_PPM(), 500_000);
     }
 }

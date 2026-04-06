@@ -3,8 +3,7 @@ pragma solidity ^0.8.27;
 
 import {Test} from "forge-std/Test.sol";
 import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
-import {TransparentUpgradeableProxy} from
-    "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
 import {RPCDataService} from "../src/RPCDataService.sol";
 import {IRPCDataService} from "../src/interfaces/IRPCDataService.sol";
@@ -39,12 +38,7 @@ import {ControllerMock} from "@graphprotocol/horizon/mocks/ControllerMock.sol";
 contract MockHorizonStakingIntegration {
     mapping(address => mapping(address => IHorizonStakingTypes.Provision)) public provisions;
 
-    function setProvision(
-        address serviceProvider,
-        address dataService,
-        uint256 tokens,
-        uint64 thawingPeriod
-    ) external {
+    function setProvision(address serviceProvider, address dataService, uint256 tokens, uint64 thawingPeriod) external {
         provisions[serviceProvider][dataService] = IHorizonStakingTypes.Provision({
             tokens: tokens,
             tokensThawing: 0,
@@ -67,41 +61,21 @@ contract MockHorizonStakingIntegration {
         return provisions[serviceProvider][dataService];
     }
 
-    function isAuthorized(address serviceProvider, address, address operator)
-        external
-        pure
-        returns (bool)
-    {
+    function isAuthorized(address serviceProvider, address, address operator) external pure returns (bool) {
         return serviceProvider == operator;
     }
 
-    function getProviderTokensAvailable(address serviceProvider, address dataService)
-        external
-        view
-        returns (uint256)
-    {
+    function getProviderTokensAvailable(address serviceProvider, address dataService) external view returns (uint256) {
         return provisions[serviceProvider][dataService].tokens;
     }
 
-    function getTokensAvailable(address serviceProvider, address dataService, uint32)
-        external
-        view
-        returns (uint256)
-    {
+    function getTokensAvailable(address serviceProvider, address dataService, uint32) external view returns (uint256) {
         return provisions[serviceProvider][dataService].tokens;
     }
 
-    function getDelegationPool(address, address)
-        external
-        pure
-        returns (IHorizonStakingTypes.DelegationPool memory)
-    {
+    function getDelegationPool(address, address) external pure returns (IHorizonStakingTypes.DelegationPool memory) {
         return IHorizonStakingTypes.DelegationPool({
-            tokens: 0,
-            shares: 0,
-            tokensThawing: 0,
-            sharesThawing: 0,
-            thawingNonce: 0
+            tokens: 0, shares: 0, tokensThawing: 0, sharesThawing: 0, thawingNonce: 0
         });
     }
 
@@ -200,9 +174,7 @@ contract RPCDataServiceIntegrationTest is Test {
         escrow = PaymentsEscrow(
             address(
                 new TransparentUpgradeableProxy(
-                    address(escrowImpl),
-                    address(1),
-                    abi.encodeCall(PaymentsEscrow.initialize, ())
+                    address(escrowImpl), address(1), abi.encodeCall(PaymentsEscrow.initialize, ())
                 )
             )
         );
@@ -252,8 +224,7 @@ contract RPCDataServiceIntegrationTest is Test {
         vm.stopPrank();
 
         // Build RAV and sign it with the signer's key.
-        IGraphTallyCollector.ReceiptAggregateVoucher memory rav = IGraphTallyCollector
-            .ReceiptAggregateVoucher({
+        IGraphTallyCollector.ReceiptAggregateVoucher memory rav = IGraphTallyCollector.ReceiptAggregateVoucher({
             collectionId: bytes32(0),
             payer: gateway,
             serviceProvider: provider,
@@ -291,8 +262,7 @@ contract RPCDataServiceIntegrationTest is Test {
         escrow.deposit(address(tallyCollector), provider, GRT_AMOUNT);
         vm.stopPrank();
 
-        IGraphTallyCollector.ReceiptAggregateVoucher memory rav = IGraphTallyCollector
-            .ReceiptAggregateVoucher({
+        IGraphTallyCollector.ReceiptAggregateVoucher memory rav = IGraphTallyCollector.ReceiptAggregateVoucher({
             collectionId: bytes32(0),
             payer: gateway,
             serviceProvider: provider,
@@ -331,9 +301,7 @@ contract RPCDataServiceIntegrationTest is Test {
     // Helpers
     // -----------------------------------------------------------------------
 
-    function _register(address _provider, string memory endpoint, string memory geo, address dest)
-        internal
-    {
+    function _register(address _provider, string memory endpoint, string memory geo, address dest) internal {
         vm.prank(_provider);
         service.register(_provider, abi.encode(endpoint, geo, dest));
     }
@@ -343,13 +311,7 @@ contract RPCDataServiceIntegrationTest is Test {
     function _authorizeSigner(address authorizer, uint256 signerPrivKey, address signer) internal {
         uint256 proofDeadline = block.timestamp + 1 hours;
         bytes32 messageHash = keccak256(
-            abi.encodePacked(
-                block.chainid,
-                address(tallyCollector),
-                "authorizeSignerProof",
-                proofDeadline,
-                authorizer
-            )
+            abi.encodePacked(block.chainid, address(tallyCollector), "authorizeSignerProof", proofDeadline, authorizer)
         );
         bytes32 digest = MessageHashUtils.toEthSignedMessageHash(messageHash);
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(signerPrivKey, digest);
@@ -360,15 +322,14 @@ contract RPCDataServiceIntegrationTest is Test {
     }
 
     /// @dev Sign a RAV with EIP-712 using the GraphTallyCollector domain.
-    function _signRAV(
-        uint256 signerPrivKey,
-        IGraphTallyCollector.ReceiptAggregateVoucher memory rav
-    ) internal view returns (bytes memory) {
+    function _signRAV(uint256 signerPrivKey, IGraphTallyCollector.ReceiptAggregateVoucher memory rav)
+        internal
+        view
+        returns (bytes memory)
+    {
         bytes32 domainSeparator = keccak256(
             abi.encode(
-                keccak256(
-                    "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
-                ),
+                keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
                 keccak256("GraphTallyCollector"),
                 keccak256("1"),
                 block.chainid,

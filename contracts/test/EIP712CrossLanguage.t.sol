@@ -31,8 +31,7 @@ contract EIP712CrossLanguageTest is Test {
     );
 
     // Hash independently computed by Rust drpc-tap crate (see eip712_hash_matches_solidity_golden).
-    bytes32 private constant EXPECTED_HASH =
-        0x6a496be73e1ebc77612afedde0307b2099cc116600e590ce743771770f85d5ba;
+    bytes32 private constant EXPECTED_HASH = 0x6a496be73e1ebc77612afedde0307b2099cc116600e590ce743771770f85d5ba;
 
     // Ethereum address corresponding to private key = 1.
     address private constant EXPECTED_SIGNER = 0x7E5F4552091A69125d5DfCb7b8C2659029395Bdf;
@@ -40,9 +39,7 @@ contract EIP712CrossLanguageTest is Test {
     function _digest() internal pure returns (bytes32) {
         bytes32 domainSep = keccak256(
             abi.encode(
-                keccak256(
-                    "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
-                ),
+                keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
                 keccak256("TAP"),
                 keccak256("1"),
                 uint256(31337),
@@ -55,10 +52,10 @@ contract EIP712CrossLanguageTest is Test {
                 RECEIPT_TYPEHASH,
                 address(0x0101010101010101010101010101010101010101), // data_service
                 address(0x0202020202020202020202020202020202020202), // service_provider
-                uint64(1_000_000_000),                               // timestamp_ns
-                uint64(42),                                          // nonce
-                uint128(1_000_000_000_000_000_000),                  // value
-                keccak256("")                                        // metadata (empty bytes)
+                uint64(1_000_000_000), // timestamp_ns
+                uint64(42), // nonce
+                uint128(1_000_000_000_000_000_000), // value
+                keccak256("") // metadata (empty bytes)
             )
         );
 

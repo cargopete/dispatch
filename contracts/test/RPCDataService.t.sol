@@ -15,12 +15,9 @@ import {IGraphPayments} from "@graphprotocol/horizon/interfaces/IGraphPayments.s
 contract MockHorizonStaking {
     mapping(address => mapping(address => IHorizonStakingTypes.Provision)) public provisions;
 
-    function setProvision(
-        address serviceProvider,
-        address dataService,
-        uint256 tokens,
-        uint64 thawingPeriod_
-    ) external {
+    function setProvision(address serviceProvider, address dataService, uint256 tokens, uint64 thawingPeriod_)
+        external
+    {
         provisions[serviceProvider][dataService] = IHorizonStakingTypes.Provision({
             tokens: tokens,
             tokensThawing: 0,
@@ -43,11 +40,7 @@ contract MockHorizonStaking {
         return provisions[serviceProvider][dataService];
     }
 
-    function isAuthorized(address serviceProvider, address, address operator)
-        external
-        pure
-        returns (bool)
-    {
+    function isAuthorized(address serviceProvider, address, address operator) external pure returns (bool) {
         return serviceProvider == operator;
     }
 
@@ -62,15 +55,15 @@ contract MockController {
 
     constructor(address staking_) {
         address dummy = address(1);
-        _contracts[keccak256("GraphToken")]         = dummy;
-        _contracts[keccak256("Staking")]            = staking_;
-        _contracts[keccak256("GraphPayments")]      = dummy;
-        _contracts[keccak256("PaymentsEscrow")]     = dummy;
-        _contracts[keccak256("EpochManager")]       = dummy;
-        _contracts[keccak256("RewardsManager")]     = dummy;
-        _contracts[keccak256("GraphTokenGateway")]  = dummy;
-        _contracts[keccak256("GraphProxyAdmin")]    = dummy;
-        _contracts[keccak256("Curation")]           = dummy;
+        _contracts[keccak256("GraphToken")] = dummy;
+        _contracts[keccak256("Staking")] = staking_;
+        _contracts[keccak256("GraphPayments")] = dummy;
+        _contracts[keccak256("PaymentsEscrow")] = dummy;
+        _contracts[keccak256("EpochManager")] = dummy;
+        _contracts[keccak256("RewardsManager")] = dummy;
+        _contracts[keccak256("GraphTokenGateway")] = dummy;
+        _contracts[keccak256("GraphProxyAdmin")] = dummy;
+        _contracts[keccak256("Curation")] = dummy;
     }
 
     function getContractProxy(bytes32 id) external view returns (address) {
@@ -172,9 +165,7 @@ contract RPCDataServiceTest is Test {
 
     function test_register_revertIfAlreadyRegistered() public {
         _register(provider, "https://rpc.example.com", "u1hx", address(0));
-        vm.expectRevert(
-            abi.encodeWithSelector(IRPCDataService.ProviderAlreadyRegistered.selector, provider)
-        );
+        vm.expectRevert(abi.encodeWithSelector(IRPCDataService.ProviderAlreadyRegistered.selector, provider));
         _register(provider, "https://rpc.example.com", "u1hx", address(0));
     }
 
@@ -233,9 +224,7 @@ contract RPCDataServiceTest is Test {
 
     function test_setPaymentsDestination_revertIfNotRegistered() public {
         vm.prank(provider);
-        vm.expectRevert(
-            abi.encodeWithSelector(IRPCDataService.ProviderNotRegistered.selector, provider)
-        );
+        vm.expectRevert(abi.encodeWithSelector(IRPCDataService.ProviderNotRegistered.selector, provider));
         service.setPaymentsDestination(makeAddr("wallet"));
     }
 
@@ -257,20 +246,15 @@ contract RPCDataServiceTest is Test {
         _register(provider, "https://rpc.example.com", "u1hx", address(0));
 
         vm.prank(provider);
-        vm.expectRevert(
-            abi.encodeWithSelector(IRPCDataService.ChainNotSupported.selector, uint256(999))
-        );
+        vm.expectRevert(abi.encodeWithSelector(IRPCDataService.ChainNotSupported.selector, uint256(999)));
         service.startService(
-            provider,
-            abi.encode(uint64(999), uint8(IRPCDataService.CapabilityTier.Standard), "https://rpc.example.com")
+            provider, abi.encode(uint64(999), uint8(IRPCDataService.CapabilityTier.Standard), "https://rpc.example.com")
         );
     }
 
     function test_startService_revertIfNotRegistered() public {
         vm.prank(provider);
-        vm.expectRevert(
-            abi.encodeWithSelector(IRPCDataService.ProviderNotRegistered.selector, provider)
-        );
+        vm.expectRevert(abi.encodeWithSelector(IRPCDataService.ProviderNotRegistered.selector, provider));
         service.startService(
             provider,
             abi.encode(CHAIN_ETH_MAINNET, uint8(IRPCDataService.CapabilityTier.Standard), "https://rpc.example.com")
@@ -282,10 +266,7 @@ contract RPCDataServiceTest is Test {
         _startService(provider, CHAIN_ETH_MAINNET, IRPCDataService.CapabilityTier.Standard, "https://rpc.example.com");
 
         vm.prank(provider);
-        service.stopService(
-            provider,
-            abi.encode(CHAIN_ETH_MAINNET, uint8(IRPCDataService.CapabilityTier.Standard))
-        );
+        service.stopService(provider, abi.encode(CHAIN_ETH_MAINNET, uint8(IRPCDataService.CapabilityTier.Standard)));
 
         IRPCDataService.ChainRegistration[] memory regs = service.getChainRegistrations(provider);
         assertFalse(regs[0].active);
@@ -304,10 +285,7 @@ contract RPCDataServiceTest is Test {
                 IRPCDataService.CapabilityTier.Standard
             )
         );
-        service.stopService(
-            provider,
-            abi.encode(CHAIN_ETH_MAINNET, uint8(IRPCDataService.CapabilityTier.Standard))
-        );
+        service.stopService(provider, abi.encode(CHAIN_ETH_MAINNET, uint8(IRPCDataService.CapabilityTier.Standard)));
     }
 
     function test_deregister_revertIfActiveRegistrationsExist() public {
@@ -315,9 +293,7 @@ contract RPCDataServiceTest is Test {
         _startService(provider, CHAIN_ETH_MAINNET, IRPCDataService.CapabilityTier.Standard, "https://rpc.example.com");
 
         vm.prank(provider);
-        vm.expectRevert(
-            abi.encodeWithSelector(IRPCDataService.ActiveRegistrationsExist.selector, provider)
-        );
+        vm.expectRevert(abi.encodeWithSelector(IRPCDataService.ActiveRegistrationsExist.selector, provider));
         service.deregister(provider, "");
     }
 
@@ -367,11 +343,7 @@ contract RPCDataServiceTest is Test {
         staking.setProvision(_provider, address(service), tokens, thawingPeriod);
     }
 
-    function _getChainConfig(uint256 chainId)
-        internal
-        view
-        returns (bool enabled, uint256 minTokens)
-    {
+    function _getChainConfig(uint256 chainId) internal view returns (bool enabled, uint256 minTokens) {
         (enabled, minTokens) = service.supportedChains(chainId);
     }
 }
