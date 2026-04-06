@@ -61,10 +61,16 @@ contract Deploy is Script {
     }
 
     function _phase1Chains() internal pure returns (ChainInit[] memory chains) {
-        chains = new ChainInit[](4);
-        chains[0] = ChainInit({chainId: 1,     minProvisionTokens: 0});      // Ethereum mainnet
-        chains[1] = ChainInit({chainId: 42161, minProvisionTokens: 0});      // Arbitrum One
-        chains[2] = ChainInit({chainId: 10,    minProvisionTokens: 0});      // Optimism
-        chains[3] = ChainInit({chainId: 8453,  minProvisionTokens: 0});      // Base
+        chains = new ChainInit[](10);
+        chains[0] = ChainInit({chainId: 1,        minProvisionTokens: 0}); // Ethereum mainnet
+        chains[1] = ChainInit({chainId: 42161,    minProvisionTokens: 0}); // Arbitrum One
+        chains[2] = ChainInit({chainId: 10,       minProvisionTokens: 0}); // Optimism
+        chains[3] = ChainInit({chainId: 8453,     minProvisionTokens: 0}); // Base
+        chains[4] = ChainInit({chainId: 137,      minProvisionTokens: 0}); // Polygon PoS
+        chains[5] = ChainInit({chainId: 56,       minProvisionTokens: 0}); // BNB Chain
+        chains[6] = ChainInit({chainId: 43114,    minProvisionTokens: 0}); // Avalanche C-Chain
+        chains[7] = ChainInit({chainId: 324,      minProvisionTokens: 0}); // zkSync Era
+        chains[8] = ChainInit({chainId: 59144,    minProvisionTokens: 0}); // Linea
+        chains[9] = ChainInit({chainId: 534352,   minProvisionTokens: 0}); // Scroll
     }
 }

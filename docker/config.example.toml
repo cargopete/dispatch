@@ -44,12 +44,31 @@ eip712_domain_name = "GraphTallyCollector"
 [chains]
 # Chain IDs this node is registered to serve.
 # Must match the chains passed to RPCDataService.startService() on-chain.
+# Supported chain IDs (add any subset you run backends for):
+#   1       — Ethereum mainnet
+#   42161   — Arbitrum One
+#   10      — Optimism
+#   8453    — Base
+#   137     — Polygon PoS
+#   56      — BNB Chain
+#   43114   — Avalanche C-Chain
+#   324     — zkSync Era
+#   59144   — Linea
+#   534352  — Scroll
 supported = [1, 42161]
 
-# Backend Ethereum RPC URLs — one entry per supported chain.
+# Backend Ethereum RPC URLs — one entry per chain ID in `supported`.
 [chains.backends]
-"1"     = "http://eth-mainnet-node:8545"
-"42161" = "http://arbitrum-node:8545"
+"1"      = "http://eth-mainnet-node:8545"
+"42161"  = "http://arbitrum-node:8545"
+# "10"     = "http://optimism-node:8545"
+# "8453"   = "http://base-node:8545"
+# "137"    = "http://polygon-node:8545"
+# "56"     = "http://bnb-node:8545"
+# "43114"  = "http://avalanche-node:8545"
+# "324"    = "http://zksync-node:8545"
+# "59144"  = "http://linea-node:8545"
+# "534352" = "http://scroll-node:8545"
 
 # Optional — remove this section entirely to run without a database.
 # When present, TAP receipts are persisted for accounting / auditing.
