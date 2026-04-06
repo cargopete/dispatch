@@ -1,5 +1,6 @@
 use alloy_primitives::{keccak256, Address, B256, U256};
 use alloy_sol_types::SolValue;
+use k256::ecdsa::{RecoveryId, Signature as K256Sig, VerifyingKey};
 
 use crate::types::{Receipt, RECEIPT_TYPE_STRING};
 
@@ -28,13 +29,43 @@ pub fn domain_separator(name: &str, chain_id: u64, verifying_contract: Address) 
 /// Compute the full EIP-712 message hash for a receipt.
 /// hash = keccak256(0x1901 || domainSeparator || structHash)
 pub fn eip712_hash(domain_sep: B256, receipt: &Receipt) -> B256 {
-    let struct_hash = receipt_struct_hash(receipt);
+    eip712_hash_raw(domain_sep, receipt_struct_hash(receipt))
+}
+
+/// Compute keccak256(0x1901 || domainSeparator || structHash) from a pre-computed struct hash.
+/// Used by both receipt and RAV hashing.
+pub fn eip712_hash_raw(domain_sep: B256, struct_hash: B256) -> B256 {
     let mut buf = [0u8; 66];
     buf[0] = 0x19;
     buf[1] = 0x01;
     buf[2..34].copy_from_slice(domain_sep.as_slice());
     buf[34..66].copy_from_slice(struct_hash.as_slice());
     keccak256(&buf)
+}
+
+/// Recover the Ethereum address that produced `sig_hex` over the given `hash`.
+///
+/// `sig_hex` must be a 65-byte r||s||v signature in `0x`-prefixed hex.
+/// `v` must be 27/28 (Ethereum) or the raw recovery id (0/1).
+pub fn recover_signer(hash: B256, sig_hex: &str) -> anyhow::Result<Address> {
+    let bytes = hex::decode(sig_hex.trim_start_matches("0x"))?;
+    anyhow::ensure!(bytes.len() == 65, "signature must be 65 bytes, got {}", bytes.len());
+    let v = bytes[64];
+    let rec_id = RecoveryId::from_byte(v % 2)
+        .ok_or_else(|| anyhow::anyhow!("invalid recovery id {v}"))?;
+    let sig = K256Sig::from_slice(&bytes[..64])?;
+    let vk = VerifyingKey::recover_from_prehash(hash.as_slice(), &sig, rec_id)?;
+    let encoded = vk.to_encoded_point(false);
+    let pubkey_hash = keccak256(&encoded.as_bytes()[1..]);
+    Ok(Address::from_slice(&pubkey_hash[12..]))
+}
+
+/// Derive the Ethereum address corresponding to a signing key.
+pub fn address_from_key(key: &k256::ecdsa::SigningKey) -> Address {
+    let vk = VerifyingKey::from(key);
+    let encoded = vk.to_encoded_point(false);
+    let pubkey_hash = keccak256(&encoded.as_bytes()[1..]);
+    Address::from_slice(&pubkey_hash[12..])
 }
 
 /// Compute the EIP-712 struct hash for a receipt.

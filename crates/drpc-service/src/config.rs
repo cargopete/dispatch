@@ -51,6 +51,13 @@ pub struct TapConfig {
     /// Maximum age of a TAP receipt before it is rejected (nanoseconds).
     #[serde(default = "default_max_receipt_age_ns")]
     pub max_receipt_age_ns: u64,
+    /// Base URL of the gateway's RAV aggregation endpoint.
+    /// e.g. "http://drpc-gateway:8080" → POST /rav/aggregate
+    /// Omit to disable automatic RAV aggregation.
+    pub aggregator_url: Option<String>,
+    /// How often to run RAV aggregation (seconds). Default: 60.
+    #[serde(default = "default_aggregation_interval_secs")]
+    pub aggregation_interval_secs: u64,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -87,4 +94,7 @@ fn default_tap_verifying_contract() -> Address {
 }
 fn default_max_receipt_age_ns() -> u64 {
     30_000_000_000 // 30 seconds
+}
+fn default_aggregation_interval_secs() -> u64 {
+    60
 }

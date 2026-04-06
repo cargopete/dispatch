@@ -1,6 +1,6 @@
 use std::{net::SocketAddr, sync::Arc};
 
-use alloy_primitives::B256;
+use alloy_primitives::{Address, B256};
 use anyhow::Result;
 use k256::ecdsa::SigningKey;
 use tower_http::trace::TraceLayer;
@@ -16,6 +16,8 @@ pub struct AppState {
     pub signing_key: Arc<SigningKey>,
     /// Pre-computed EIP-712 domain separator for GraphTallyCollector.
     pub tap_domain_separator: B256,
+    /// Ethereum address derived from `signing_key` — used as `payer` in RAVs.
+    pub signer_address: Address,
 }
 
 pub async fn run(config: Config) -> Result<()> {
@@ -30,6 +32,7 @@ pub async fn run(config: Config) -> Result<()> {
         config.tap.eip712_verifying_contract,
     );
 
+    let signer_address = drpc_tap::address_from_key(&signing_key);
     let registry = Registry::from_config(&config.providers);
 
     let state = AppState {
@@ -40,6 +43,7 @@ pub async fn run(config: Config) -> Result<()> {
         registry: Arc::new(registry),
         signing_key: Arc::new(signing_key),
         tap_domain_separator,
+        signer_address,
     };
 
     // Start background probe task

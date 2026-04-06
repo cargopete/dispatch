@@ -35,6 +35,12 @@ eip712_domain_name = "GraphTallyCollector"
 # Reject receipts older than this many nanoseconds (default: 30s).
 # max_receipt_age_ns = 30000000000
 
+# Gateway base URL for RAV aggregation. Omit to disable.
+# aggregator_url = "http://drpc-gateway:8080"
+
+# How often to run RAV aggregation, in seconds (default: 60).
+# aggregation_interval_secs = 60
+
 [chains]
 # Chain IDs this node is registered to serve.
 # Must match the chains passed to RPCDataService.startService() on-chain.

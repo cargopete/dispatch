@@ -9,6 +9,7 @@ use crate::{
     db,
     routes,
     tap,
+    tap_aggregator,
 };
 
 /// Shared application state — cheaply cloneable, lives for the process lifetime.
@@ -40,6 +41,11 @@ pub async fn run(config: Config) -> Result<()> {
         tracing::warn!("no [database] configured — receipts will not be persisted");
         None
     };
+
+    // Start RAV aggregation loop if a database and aggregator URL are both configured.
+    if let Some(ref pool) = db_pool {
+        tap_aggregator::spawn(Arc::new(config.clone()), pool.clone());
+    }
 
     let state = AppState {
         config: Arc::new(config.clone()),

@@ -10,6 +10,8 @@ name = "drpc-service"
 path = "src/main.rs"
 
 [dependencies]
+drpc-tap.workspace = true
+
 tokio.workspace = true
 axum.workspace = true
 tower.workspace = true
