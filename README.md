@@ -7,18 +7,23 @@ A decentralised JSON-RPC data service built on [The Graph Protocol's Horizon fra
 
 Inspired by the [Q3 2026 "Experimental JSON-RPC Data Service"](https://thegraph.com/blog/graph-protocol-2026-technical-roadmap/) direction in The Graph's 2026 Technical Roadmap — but this codebase is an independent community effort, not an official implementation.
 
+**Implementation status:** all five phases are feature-complete. The contract, Rust services, TypeScript SDK and agent, subgraph, and Docker Compose stack are all written and tested. `RPCDataService` has not yet been deployed to testnet; see [Before deployment](#before-deployment) for the remaining checklist.
+
 ---
 
 ## Architecture
 
 ```
-Consumer
+Consumer (dApp)
    │
-   ▼
-drpc-gateway          ← QoS-scored provider selection, TAP receipt signing,
-   │                    concurrent/quorum dispatch, rate limiting, Prometheus metrics
-   │  POST /rpc/{chain_id}
-   │  TAP-Receipt: { signed EIP-712 receipt }
+   ├── via consumer-sdk (trustless, direct)
+   │     signs receipts locally, discovers providers via subgraph
+   │
+   └── via drpc-gateway (managed, centralised)
+         QoS-scored selection, TAP receipt signing, quorum consensus
+   │
+   │  POST /rpc/{chain_id}  (or X-Chain-Id header on /rpc)
+   │  X-Drpc-Tap-Receipt: { signed EIP-712 receipt }
    ▼
 drpc-service          ← JSON-RPC proxy, TAP receipt validation, response attestation,
    │                    receipt persistence (PostgreSQL → TAP agent → RAV redemption)
@@ -59,6 +64,10 @@ contracts/
 ├── test/
 └── script/Deploy.s.sol
 
+consumer-sdk/         TypeScript SDK — dApp developers use this to talk to
+                      providers directly without the gateway
+indexer-agent/        TypeScript agent — automates provider register/startService/
+                      stopService lifecycle with graceful shutdown
 subgraph/             The Graph subgraph — indexes RPCDataService events
 docker/               Docker Compose full-stack deployment
 ```
@@ -112,6 +121,27 @@ Lightweight daemon that feeds Ethereum L1 block headers to the RPCDataService co
 - Skips duplicate blocks (in-memory deduplication)
 - Submits `setTrustedStateRoot(blockHash, stateRoot)` to Arbitrum with configurable tx timeout
 
+### `consumer-sdk`
+TypeScript package for dApp developers who want to send requests through the dRPC network without running a gateway.
+
+Key features:
+- `DRPCClient` — discovers providers via subgraph, signs TAP receipts per request, updates QoS scores with EMA
+- `signReceipt` / `buildReceipt` — EIP-712 TAP v2 receipt construction and signing
+- `discoverProviders` — subgraph GraphQL query returning active providers for a given chain and tier
+- `selectProvider` — weighted random selection proportional to QoS score
+- `computeAttestationHash` / `recoverAttestationSigner` — verify provider response attestations
+
+See [`consumer-sdk/README.md`](consumer-sdk/README.md) for full API reference.
+
+### `indexer-agent`
+TypeScript daemon automating the provider lifecycle on-chain.
+
+- Polls on-chain registrations and reconciles against `agent.config.json` every N seconds
+- Calls `register`, `startService`, and `stopService` as needed
+- Graceful shutdown: stops all active registrations before exiting on SIGTERM/SIGINT
+
+See [`indexer-agent/config.example.json`](indexer-agent/config.example.json) for configuration.
+
 ### `contracts/RPCDataService.sol`
 On-chain contract inheriting Horizon's `DataService` + `DataServiceFees` + `DataServicePausable`.
 
@@ -120,8 +150,11 @@ Key functions:
 - `setPaymentsDestination` — decouple the GRT payment recipient from the operator signing key
 - `startService` — activates provider for a `(chainId, capabilityTier)` pair
 - `stopService` / `deregister` — lifecycle management
-- `collect` — enforces `QueryFee` payment type; routes through `GraphTallyCollector`, locks `fees × 5` in stake claims
+- `collect` — enforces `QueryFee` payment type; routes through `GraphTallyCollector`, locks `fees × 5` in stake claims; accrues issuance rewards if pool is funded
 - `slash` — Tier 1 Merkle fraud proof slashing via EIP-1186 MPT proofs (`StateProofVerifier.sol`)
+- `claimRewards` — transfer accrued GRT issuance rewards to the caller
+- `proposeChain` / `approveProposedChain` / `rejectProposedChain` — permissionless chain registration with 100k GRT bond
+- `setMinThawingPeriod` — governance-adjustable thawing period (≥ 14 days)
 
 Reference implementations: [`SubgraphService`](https://github.com/graphprotocol/contracts/tree/main/packages/subgraph-service) (live on Arbitrum One) and [`substreams-data-service`](https://github.com/graphprotocol/substreams-data-service) (pre-launch).
 
@@ -227,8 +260,38 @@ forge build
 forge test -vvv
 
 cp .env.example .env
-# fill in PRIVATE_KEY, GRAPH_CONTROLLER, PAUSE_GUARDIAN
+# fill in PRIVATE_KEY, OWNER, PAUSE_GUARDIAN, GRT_TOKEN, GRAPH_CONTROLLER, GRAPH_TALLY_COLLECTOR
 forge script script/Deploy.s.sol --rpc-url arbitrum_sepolia --broadcast --verify -vvvv
+```
+
+### Use the Consumer SDK
+
+```bash
+cd consumer-sdk
+npm install
+```
+
+```typescript
+import { DRPCClient } from "@drpc/consumer-sdk";
+
+const client = new DRPCClient({
+  chainId: 1,
+  dataServiceAddress: "0x...",
+  graphTallyCollector: "0x8f69F5C07477Ac46FBc491B1E6D91E2be0111A9e",
+  subgraphUrl: "https://api.thegraph.com/subgraphs/name/drpc/rpc-network",
+  signerPrivateKey: process.env.CONSUMER_KEY as `0x${string}`,
+});
+
+const block = await client.request("eth_blockNumber", []);
+```
+
+### Run the indexer agent
+
+```bash
+cd indexer-agent
+cp config.example.json agent.config.json
+# fill in arbitrumRpcUrl, rpcDataServiceAddress, operatorPrivateKey, providerAddress, endpoint, geoHash
+npm start
 ```
 
 ---
@@ -317,8 +380,10 @@ data_service_address = "0x..."
 |---|---|---|
 | 1 — MVP | ✅ Complete | Core contract, indexer service, gateway, TAP payments, attestation, subgraph, CI |
 | 2 — Foundation | ✅ Complete | Quorum consensus, CU-weighted pricing, 10+ chains, geographic routing, capability tiers, metrics, rate limiting, WebSocket, batch RPC, dynamic discovery |
-| 3 — Full parity | ✅ Largely complete | Tier 1 fraud proof slashing, block header oracle, WebSocket subscriptions |
-| 4 — Production | 🔲 Planned | TEE verification, P2P SDK, GRT issuance rewards, permissionless chains |
+| 3 — Full parity | ✅ Complete | Tier 1 fraud proof slashing, block header oracle, WebSocket subscriptions, archive/debug tier routing |
+| 4 — Production readiness | ✅ Complete | Unified endpoint, permissionless chain registration, GRT issuance groundwork, indexer agent, subgraph v2 |
+| 5 — Consumer SDK & rewards | ✅ Complete | Consumer SDK, rewards pool, dynamic thawing period |
+| Deployment | ⏳ Not started | Contract deploy, subgraph deploy, npm publish, integration test, security review |
 
 See [`ROADMAP.md`](ROADMAP.md) for full detail.
 
@@ -332,10 +397,25 @@ See [`ROADMAP.md`](ROADMAP.md) for full detail.
 | GraphTallyCollector (TAP v2) | ✅ Reused as-is |
 | `indexer-tap-agent` | ✅ Reused as-is (reads from `tap_receipts` table) |
 | `indexer-service-rs` TAP middleware | ✅ Logic ported to `drpc-service` |
-| `indexer-agent` | 🔄 Needs adaptation (chain registration instead of allocation management) |
-| `edgeandnode/gateway` | 🔄 `drpc-gateway` implements equivalent logic for RPC |
+| `indexer-agent` | ✅ `indexer-agent/` TypeScript package handles register/startService/stopService lifecycle |
+| `edgeandnode/gateway` | ✅ `drpc-gateway` implements equivalent logic for RPC; `consumer-sdk` provides trustless alternative |
 | Graph Node | ❌ Not needed — standard Ethereum clients only |
 | POI / SubgraphService dispute system | ❌ Replaced by tiered verification framework |
+
+---
+
+## Before deployment
+
+The implementation is feature-complete but the following are needed before a live testnet or mainnet run:
+
+| Task | Notes |
+|---|---|
+| Deploy `RPCDataService` | Run `forge script script/Deploy.s.sol` against Arbitrum Sepolia; fill in the resulting address everywhere `data_service_address = "0x..."` appears |
+| Deploy the subgraph | `graph deploy` with real `startBlock`; update all `subgraphUrl` placeholders |
+| End-to-end integration test | One full request cycle: consumer → gateway → drpc-service → backend node → TAP receipt → `collect()`; currently tested only at unit level |
+| Publish npm packages | `consumer-sdk` and `indexer-agent` are not yet published to npm (`publishConfig`, `files`, `prepublishOnly` hook needed) |
+| `indexer-agent` tests | The agent writes on-chain transactions but has no automated tests; worth a basic Anvil-backed test before anyone runs it against mainnet |
+| Security review | `RPCDataService.sol` handles GRT; a light audit pass before any real funds are involved |
 
 ---
 

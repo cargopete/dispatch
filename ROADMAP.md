@@ -39,24 +39,63 @@ Originally targeted Q4 2026. Completed ahead of schedule.
 
 ---
 
-## Phase 3 — Full Feature Parity ✅ Largely Complete
+## Phase 3 — Full Feature Parity ✅ Complete
 
 Originally targeted Q1 2027.
 
 - [x] WebSocket subscriptions — `eth_subscribe` / `eth_unsubscribe` proxied bidirectionally
 - [x] Tier 1 fraud proof slashing — `slash()` with EIP-1186 MPT proofs via `StateProofVerifier.sol`
 - [x] Block header trust oracle — `drpc-oracle` polls L1, submits state roots to Arbitrum for on-chain verification
-- [ ] Archive tier routing — requires inspecting block parameters to detect archive requests (Phase 3 remainder)
-- [ ] `debug_*` / `trace_*` routing — capability tier filter in place; subgraph schema extension needed for auto-discovery
+- [x] Archive tier routing — `requires_archive()` inspects block parameters; hex block numbers, `"earliest"`, and JSON integers route to Archive tier
+- [x] `debug_*` / `trace_*` routing — per-chain capability map (not global union); providers advertising Debug on chain X are only routed debug requests for chain X
 
 ---
 
-## Phase 4 — Production Readiness (Q2 2027)
+## Phase 4 — Production Readiness ✅ Complete (except deferred items)
 
-- [ ] TEE-based response verification
-- [ ] Cross-chain unified endpoint
-- [ ] P2P SDK for trustless consumer-provider connections (removes gateway trust assumption)
-- [ ] GRT issuance rewards (requires governance approval + proof-of-work mechanism)
-- [ ] Permissionless chain registration (with bond mechanism)
-- [ ] Indexer agent TypeScript adaptation — `startService`/`stopService` automation
-- [ ] Subgraph schema v2 — include region + capability tier for dynamic discovery
+Originally targeted Q2 2027.
+
+- [x] Cross-chain unified `/rpc` endpoint — chain selected via `X-Chain-Id` header; defaults to chain 1
+- [x] Permissionless chain registration — `proposeChain()` locks 100k GRT bond; governance approves/rejects
+- [x] GRT issuance groundwork — `issuancePerCU` storage + `setIssuancePerCU()` governance setter; wiring to RewardsManager is governance-gated (Phase 5)
+- [x] Indexer agent — TypeScript package (`indexer-agent/`) automating register/startService/stopService lifecycle with graceful shutdown
+- [x] Subgraph schema v2 — `Protocol` aggregate entity (total providers, active registrations), `ChainProposal` entity for bond lifecycle
+- [ ] TEE-based response verification — deferred; requires enclave hardware + security audit (~6 months design)
+- [ ] P2P SDK — deferred; rethinks the payment trust model; gateway-optional considered for Phase 5
+
+---
+
+## Phase 5 — Consumer SDK & Rewards Pool ✅ Complete
+
+Originally targeted Q3 2027.
+
+- [x] Consumer SDK (`consumer-sdk/`) — TypeScript package for dApp developers
+  - EIP-712 TAP receipt signing (`tap.ts`) — cross-language compatible with provider TAP v2 verification
+  - Subgraph-driven provider discovery (`discovery.ts`) — live registry via GraphQL
+  - Weighted QoS selection (`selector.ts`) — probability proportional to score; EMA update after each request
+  - Attestation verification utilities (`attestation.ts`) — hash computation + signer recovery
+  - `DRPCClient` (`client.ts`) — single-call `request()` with automatic receipt signing, provider selection, QoS tracking, and 60s discovery TTL
+- [x] Rewards pool — `depositRewardsPool` / `withdrawRewardsPool` (governance); `claimRewards()` (provider)
+  - Issuance accrues on every `collect()`: `reward = fees × issuancePerCU / 1e18`, capped at remaining pool
+  - `pendingRewards` mapping stores per-recipient unclaimed GRT
+- [x] Dynamic thawing period — `setMinThawingPeriod()` live; lower-bounded by `MIN_THAWING_PERIOD` constant; `collect()` uses `minThawingPeriod` storage variable
+
+---
+
+## Before deployment (pre-testnet checklist)
+
+All five phases are feature-complete. The following work remains before a live network run:
+
+- [ ] **Contract deployment** — run `forge script script/Deploy.s.sol` on Arbitrum Sepolia; propagate address to all configs
+- [ ] **Subgraph deployment** — `graph deploy` with correct `startBlock`; update `subgraphUrl` in all configs and SDK examples
+- [ ] **End-to-end integration test** — full cycle: consumer → gateway → drpc-service → backend node → TAP receipt → `RPCDataService.collect()`; currently only unit-tested
+- [ ] **npm publish** — `consumer-sdk` and `indexer-agent` need `publishConfig`, `files`, and `prepublishOnly` build hook before publishing to npm
+- [ ] **Indexer agent tests** — agent has no automated tests; basic Anvil-backed smoke test before anyone runs it against mainnet
+- [ ] **Light security review** — `RPCDataService.sol` handles real GRT; worth a focused audit pass before live funds
+
+---
+
+## Deferred (no current timeline)
+
+- **TEE-based response verification** — enclave hardware + security audit; ~6 months minimum design work
+- **P2P SDK** — gateway-optional payment model; rethinks trust assumptions end-to-end
