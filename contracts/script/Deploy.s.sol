@@ -6,6 +6,13 @@ import {RPCDataService} from "../src/RPCDataService.sol";
 
 /// @notice Deploy RPCDataService to a target network.
 ///
+/// Usage (Arbitrum One mainnet):
+///   forge script script/Deploy.s.sol \
+///     --rpc-url arbitrum_one \
+///     --broadcast \
+///     --verify \
+///     -vvvv
+///
 /// Usage (Arbitrum Sepolia testnet):
 ///   forge script script/Deploy.s.sol \
 ///     --rpc-url arbitrum_sepolia \
@@ -18,16 +25,21 @@ import {RPCDataService} from "../src/RPCDataService.sol";
 ///   OWNER                 — governance multisig or deployer address
 ///   GRAPH_CONTROLLER      — Graph Protocol Controller address
 ///   GRAPH_TALLY_COLLECTOR — GraphTallyCollector contract address
+///   GRT_TOKEN             — GRT ERC-20 token address
 ///   PAUSE_GUARDIAN        — address authorised to pause the service
 ///
-/// Horizon addresses — Arbitrum Sepolia (421614):
+/// Horizon addresses — Arbitrum One (42161, mainnet):
+///   Controller:           cast call 0xb2Bb92d0DE618878E438b55D5846cfecD9301105 "controller()(address)" --rpc-url arbitrum_one
+///   HorizonStaking:       0x00669A4CF01450B64E8A2A20E9b1FCB71E61eF03
+///   GraphTallyCollector:  0x8f69F5C07477Ac46FBc491B1E6D91E2be0111A9e
+///   PaymentsEscrow:       0x8f477709eF277d4A880801D01A140a9CF88bA0d3
+///   GRT Token:            0x9623063377AD1B27544C965cCd7342f7EA7e88C7
+///
+/// Horizon addresses — Arbitrum Sepolia (421614, testnet):
 ///   Controller:           0x9DB3ee191681f092607035d9BDA6e59FbEaCa695
 ///   HorizonStaking:       0xFf2Ee30de92F276018642A59Fb7Be95b3F9088Af
 ///   GraphTallyCollector:  0xacC71844EF6beEF70106ABe6E51013189A1f3738
 ///   PaymentsEscrow:       0x09B985a2042848A08bA59060EaF0f07c6F5D4d54
-///
-/// Horizon addresses — Arbitrum One (42161):
-///   GraphTallyCollector:  0x8f69F5C07477Ac46FBc491B1E6D91E2be0111A9e
 contract Deploy is Script {
     /// Phase 1 supported chains and their minimum provisions (in GRT wei).
     struct ChainInit {
