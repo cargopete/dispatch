@@ -87,18 +87,18 @@ async function signReceipt(
 // ── tests ────────────────────────────────────────────────────────────────────
 
 describe("health", () => {
-  it("drpc-service /health returns 200", async () => {
+  it("dispatch-service /health returns 200", async () => {
     const res = await fetch(`${SERVICE_URL}/health`);
     expect(res.status).toBe(200);
   });
 
-  it("drpc-gateway /health returns 200", async () => {
+  it("dispatch-gateway /health returns 200", async () => {
     const res = await fetch(`${GATEWAY_URL}/health`);
     expect(res.status).toBe(200);
   });
 });
 
-describe("direct request to drpc-service", () => {
+describe("direct request to dispatch-service", () => {
   it("accepts a valid TAP-Receipt and returns eth_blockNumber", async () => {
     const receipt = await signReceipt(fx);
     const res = await fetch(`${SERVICE_URL}/rpc/31337`, {
@@ -156,7 +156,7 @@ describe("direct request to drpc-service", () => {
 });
 
 describe("request through gateway", () => {
-  it("routes eth_blockNumber to drpc-service and returns a result", async () => {
+  it("routes eth_blockNumber to dispatch-service and returns a result", async () => {
     const res = await fetch(`${GATEWAY_URL}/rpc/31337`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

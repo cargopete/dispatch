@@ -1,6 +1,6 @@
-# @drpc/consumer-sdk
+# /consumer-sdk
 
-TypeScript SDK for dApp developers to send JSON-RPC requests through the dRPC decentralised network directly — bypassing the centralised gateway entirely.
+TypeScript SDK for dApp developers to send JSON-RPC requests through the Dispatch decentralised network directly — bypassing the centralised gateway entirely.
 
 The SDK handles provider discovery, TAP v2 receipt signing, QoS-based selection, and optional attestation verification. One import, one call.
 
@@ -9,7 +9,7 @@ The SDK handles provider discovery, TAP v2 receipt signing, QoS-based selection,
 ## Installation
 
 ```bash
-npm install @drpc/consumer-sdk viem
+npm install /consumer-sdk viem
 ```
 
 ---
@@ -17,13 +17,13 @@ npm install @drpc/consumer-sdk viem
 ## Quick start
 
 ```typescript
-import { DRPCClient, CapabilityTier } from "@drpc/consumer-sdk";
+import { DISPATCHClient, CapabilityTier } from "/consumer-sdk";
 
-const client = new DRPCClient({
+const client = new DISPATCHClient({
   chainId: 1,
   dataServiceAddress: "0x...",          // RPCDataService contract address
   graphTallyCollector: "0x8f69F5C07477Ac46FBc491B1E6D91E2be0111A9e",
-  subgraphUrl: "https://api.thegraph.com/subgraphs/name/drpc/rpc-network",
+  subgraphUrl: "https://api.thegraph.com/subgraphs/name/dispatch/rpc-network",
   signerPrivateKey: process.env.CONSUMER_KEY as `0x${string}`,
 });
 
@@ -48,7 +48,7 @@ interface ClientConfig {
    *  Arbitrum Sepolia (testnet): 0xacC71844EF6beEF70106ABe6E51013189A1f3738 */
   graphTallyCollector: `0x${string}`;
 
-  /** dRPC subgraph URL for provider discovery. */
+  /** Dispatch subgraph URL for provider discovery. */
   subgraphUrl: string;
 
   /** Consumer private key used to sign TAP receipts per request. */
@@ -85,7 +85,7 @@ interface ClientConfig {
 
 ## Attestation verification
 
-The dRPC protocol includes an optional attestation layer. For Tier 1 methods (`eth_getBalance`, `eth_getStorageAt`, `eth_getCode`, `eth_getProof`), providers sign a hash over the request and response. You can verify these after the fact:
+The Dispatch protocol includes an optional attestation layer. For Tier 1 methods (`eth_getBalance`, `eth_getStorageAt`, `eth_getCode`, `eth_getProof`), providers sign a hash over the request and response. You can verify these after the fact:
 
 ```typescript
 const response = await client.request("eth_getBalance", [
@@ -95,7 +95,7 @@ const response = await client.request("eth_getBalance", [
 
 // Attestation verification requires the block context from the response.
 // Providers include blockNumber and blockHash in the attestation header.
-const attestationSig = httpResponse.headers.get("x-drpc-attestation") as `0x${string}`;
+const attestationSig = httpResponse.headers.get("x-dispatch-attestation") as `0x${string}`;
 
 const valid = await client.verifyAttestation(
   "eth_getBalance",
@@ -117,7 +117,7 @@ The SDK exports all building blocks individually if you need more control.
 ### Provider discovery
 
 ```typescript
-import { discoverProviders, CapabilityTier } from "@drpc/consumer-sdk";
+import { discoverProviders, CapabilityTier } from "/consumer-sdk";
 
 const providers = await discoverProviders(subgraphUrl, 1, CapabilityTier.Standard);
 // [{ address, geoHash, paymentsDestination, services, qosScore }, ...]
@@ -126,7 +126,7 @@ const providers = await discoverProviders(subgraphUrl, 1, CapabilityTier.Standar
 ### Provider selection
 
 ```typescript
-import { selectProvider, updateQosScore } from "@drpc/consumer-sdk";
+import { selectProvider, updateQosScore } from "/consumer-sdk";
 
 const provider = selectProvider(providers); // weighted random by qosScore
 
@@ -137,7 +137,7 @@ provider.qosScore = updateQosScore(provider.qosScore, latencyMs);
 ### CU pricing
 
 ```typescript
-import { methodCU, computeReceiptValue } from "@drpc/consumer-sdk";
+import { methodCU, computeReceiptValue } from "/consumer-sdk";
 
 methodCU("eth_blockNumber")       // 1
 methodCU("eth_call")              // 10
@@ -153,7 +153,7 @@ Use `basePricePerCU` in `ClientConfig` to enable per-method pricing automaticall
 ### TAP receipt signing
 
 ```typescript
-import { buildReceipt, signReceipt } from "@drpc/consumer-sdk";
+import { buildReceipt, signReceipt } from "/consumer-sdk";
 
 const receipt = buildReceipt(
   dataServiceAddress,
@@ -168,13 +168,13 @@ const { signature } = await signReceipt(
 );
 
 // Attach to your HTTP request:
-// "X-Drpc-Tap-Receipt": JSON.stringify({ receipt, signature })
+// "X-Dispatch-Tap-Receipt": JSON.stringify({ receipt, signature })
 ```
 
 ### Attestation hash computation
 
 ```typescript
-import { computeAttestationHash, recoverAttestationSigner } from "@drpc/consumer-sdk";
+import { computeAttestationHash, recoverAttestationSigner } from "/consumer-sdk";
 
 const hash = computeAttestationHash({
   chainId: 1,
@@ -192,7 +192,7 @@ const signer = await recoverAttestationSigner(hash, signature);
 
 ## Architecture note
 
-`DRPCClient` caches discovered providers for 60 seconds and updates their QoS scores after each request using an exponential moving average. On the first request the discovery TTL is cold, so expect a subgraph query latency on that call.
+`DISPATCHClient` caches discovered providers for 60 seconds and updates their QoS scores after each request using an exponential moving average. On the first request the discovery TTL is cold, so expect a subgraph query latency on that call.
 
 The `signerPrivateKey` is a consumer key — it identifies who is sending requests and is used to sign TAP receipts. Providers aggregate these receipts and submit them on-chain via `RPCDataService.collect()` to claim GRT fees.
 

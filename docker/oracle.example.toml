@@ -1,11 +1,11 @@
-# drpc-oracle configuration
+# dispatch-oracle configuration
 # Polls Ethereum mainnet for new block headers and submits them as trusted
 # state roots to the RPCDataService contract on Arbitrum. Required for the
 # Tier 1 fraud-proof slash() mechanism to work.
 #
 # Copy to docker/oracle.toml and fill in your values before running.
-# docker-compose mounts this file as /etc/drpc/oracle.toml inside the container.
-# Override the path with: DRPC_ORACLE_CONFIG=/path/to/oracle.toml
+# docker-compose mounts this file as /etc/dispatch/oracle.toml inside the container.
+# Override the path with: DISPATCH_ORACLE_CONFIG=/path/to/oracle.toml
 
 [oracle]
 # Ethereum produces a block roughly every 12 seconds.

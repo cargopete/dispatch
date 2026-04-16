@@ -106,6 +106,8 @@ contract RPCDataService is Ownable, DataService, DataServiceFees, DataServicePau
 
     event TrustedStateRootSet(bytes32 indexed blockHash, bytes32 stateRoot);
 
+    error ProviderNotServingChain(address provider, uint64 chainId);
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -424,6 +426,12 @@ contract RPCDataService is Ownable, DataService, DataServiceFees, DataServicePau
 
         Tier1FraudProof memory proof = abi.decode(data, (Tier1FraudProof));
 
+        // Ensure the provider is actually registered to serve the disputed chain.
+        // Prevents using a valid proof from chain B to slash a provider serving only chain A.
+        if (!_hasActiveChain(serviceProvider, proof.chainId)) {
+            revert ProviderNotServingChain(serviceProvider, proof.chainId);
+        }
+
         bytes32 stateRoot = trustedStateRoots[proof.blockHash];
         if (stateRoot == bytes32(0)) revert UntrustedBlockHash(proof.blockHash);
 
@@ -490,5 +498,26 @@ contract RPCDataService is Ownable, DataService, DataServiceFees, DataServicePau
         for (uint256 i = 0; i < regs.length; i++) {
             if (regs[i].active) count++;
         }
+    }
+
+    /// @notice Grant or revoke pause guardian status.
+    /// @dev Allows the owner to revoke a compromised guardian after an emergency pause.
+    ///      Note: DataServicePausable.unpause() is not virtual so it cannot be overridden
+    ///      to require onlyOwner — revoking the guardian is the owner's recourse instead.
+    function setPauseGuardian(address guardian, bool allowed) external onlyOwner {
+        _setPauseGuardian(guardian, allowed);
+    }
+
+    // -------------------------------------------------------------------------
+    // Internal helpers
+    // -------------------------------------------------------------------------
+
+    /// @dev Returns true if the provider has at least one active registration for chainId.
+    function _hasActiveChain(address provider, uint64 chainId) internal view returns (bool) {
+        ChainRegistration[] storage regs = _providerChains[provider];
+        for (uint256 i = 0; i < regs.length; i++) {
+            if (regs[i].chainId == chainId && regs[i].active) return true;
+        }
+        return false;
     }
 }

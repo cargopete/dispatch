@@ -1,8 +1,8 @@
-# drpc-gateway configuration
+# dispatch-gateway configuration
 # Copy to docker/gateway.toml and fill in your values before running.
 #
-# docker-compose mounts this file as /etc/drpc/gateway.toml inside the container.
-# Override the path with: DRPC_GATEWAY_CONFIG=/path/to/gateway.toml
+# docker-compose mounts this file as /etc/dispatch/gateway.toml inside the container.
+# Override the path with: DISPATCH_GATEWAY_CONFIG=/path/to/gateway.toml
 
 [gateway]
 host = "0.0.0.0"
@@ -16,14 +16,14 @@ port = 8080
 signer_private_key = "0x0000000000000000000000000000000000000000000000000000000000000000"
 
 # RPCDataService contract address.
-data_service_address = "0x0000000000000000000000000000000000000000"
+data_service_address = "0x73846272813065c3e4efdb3fb82e0d128c8c2364"
 
 # EIP-712 domain — must match the deployed GraphTallyCollector.
-eip712_domain_name = "TAP"
+eip712_domain_name = "GraphTallyCollector"
 
 # Arbitrum One (default). Override for other networks.
 # eip712_chain_id = 42161
-# eip712_verifying_contract = "0x8f69F5C07477Ac46FBc491B1E6D91E2be0111A9e"
+# eip712_verifying_contract = "0x8f69F5C07477Ac46FBc491B1E6D91E2bb0111A9e"
 
 # GRT wei per compute unit (default ≈ $40/M requests at $0.09/GRT).
 # base_price_per_cu = 4000000000000
@@ -43,9 +43,9 @@ concurrent_k         = 3
 # provider registry automatically. Static [[providers]] below are used as the
 # initial set until the first successful poll.
 #
-# [discovery]
-# subgraph_url  = "https://api.thegraph.com/subgraphs/name/your-org/rpc-network"
-# interval_secs = 60
+[discovery]
+subgraph_url  = "https://api.studio.thegraph.com/query/1747796/rpc-network/v0.1.1"
+interval_secs = 60
 
 # ── Rate limiting ──────────────────────────────────────────────────────────
 # Per-IP token-bucket rate limiting on the /rpc/{chain_id} endpoint.
@@ -59,7 +59,7 @@ concurrent_k         = 3
 # Add one [[providers]] block per indexer.
 [[providers]]
 address      = "0x0000000000000000000000000000000000000000"  # indexer's on-chain address
-endpoint     = "http://drpc-service:7700"                    # base URL of drpc-service
+endpoint     = "http://dispatch-service:7700"                    # base URL of dispatch-service
 chains       = [1, 42161]
 # region       = "eu-west"
 

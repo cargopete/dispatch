@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/drpc-service", "crates/drpc-tap", "crates/drpc-gateway", "crates/drpc-oracle", "crates/drpc-smoke"]
+members = ["crates/dispatch-service", "crates/dispatch-tap", "crates/dispatch-gateway", "crates/dispatch-oracle", "crates/dispatch-smoke"]
 resolver = "2"
 
 [workspace.package]
@@ -57,4 +57,4 @@ hex = "0.4"
 rand = { version = "0.8", features = ["small_rng"] }
 
 # Workspace-local crates
-drpc-tap = { path = "crates/drpc-tap" }
+dispatch-tap = { path = "crates/dispatch-tap" }

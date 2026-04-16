@@ -1,4 +1,4 @@
-# RFC: dRPC Data Service on The Graph Horizon
+# RFC: Dispatch Data Service on The Graph Horizon
 
 **Status:** Implemented (see codebase)
 **Target:** Q3 2026 experimental window
@@ -9,7 +9,7 @@
 
 ## 1. Summary
 
-This RFC describes a decentralised JSON-RPC (dRPC) data service built on The Graph Protocol's Horizon framework. It defines the on-chain contract interface, off-chain indexer service architecture, payment model, verification framework, and gateway integration required to serve Ethereum-compatible JSON-RPC requests under Horizon's economic security model.
+This RFC describes a decentralised JSON-RPC (Dispatch) data service built on The Graph Protocol's Horizon framework. It defines the on-chain contract interface, off-chain indexer service architecture, payment model, verification framework, and gateway integration required to serve Ethereum-compatible JSON-RPC requests under Horizon's economic security model.
 
 The Graph's Horizon upgrade (mainnet December 2025, GIP-0066) explicitly supports this as the second production data service after SubgraphService. The 2026 Technical Roadmap names an "Experimental JSON-RPC Data Service" for Q3 2026.
 
@@ -191,7 +191,7 @@ contract RPCDataService is DataService, DataServicePausable, DataServiceFees {
 
 **slash(serviceProvider, data)**
 - `data`: ABI-encoded `Tier1FraudProof` — block hash, account, dispute type (Balance/Nonce/Storage), claimed value, EIP-1186 account + storage proofs, challenger address
-- Looks up trusted state root via `trustedStateRoots[blockHash]` (populated by `drpc-oracle`)
+- Looks up trusted state root via `trustedStateRoots[blockHash]` (populated by `dispatch-oracle`)
 - Verifies proof via `StateProofVerifier.verifyAccount` / `verifyStorage` (OZ MPT library)
 - Calls `HorizonStaking.slash(serviceProvider, slashAmount, verifierCut, challenger)` — 50% bounty to challenger
 
@@ -239,9 +239,9 @@ Methods where correctness is verifiable via Ethereum's Merkle-Patricia trie:
 
 **Performance:** Proofs are 500B–5KB, generation takes 5–20ms. Default: sign all responses, attach proofs on-demand or during random spot-checks. NOT on every request.
 
-**Fraud proof slashing:** Challenger submits a `Tier1FraudProof` with the disputed block hash, EIP-1186 account/storage proofs, and claimed vs actual value. On-chain arbitration verifies via `StateProofVerifier.sol`. If valid: 10,000 GRT slashed, 50% to challenger. `drpc-oracle` maintains the `trustedStateRoots` mapping that makes verification possible.
+**Fraud proof slashing:** Challenger submits a `Tier1FraudProof` with the disputed block hash, EIP-1186 account/storage proofs, and claimed vs actual value. On-chain arbitration verifies via `StateProofVerifier.sol`. If valid: 10,000 GRT slashed, 50% to challenger. `dispatch-oracle` maintains the `trustedStateRoots` mapping that makes verification possible.
 
-**Competitive differentiation:** No existing dRPC protocol (Lava, Pocket, DRPC, Fluence) uses Merkle proofs. This is a significant differentiator.
+**Competitive differentiation:** No existing Dispatch protocol (Lava, Pocket, DISPATCH, Fluence) uses Merkle proofs. This is a significant differentiator.
 
 ### Tier 2 — Quorum-verified methods
 
@@ -326,7 +326,7 @@ Concurrent dispatch to up to 3 providers. First valid response wins. If primary 
 
 ## 8. Off-chain indexer stack
 
-### 8.1 drpc-indexer-service (Rust)
+### 8.1 dispatch-indexer-service (Rust)
 
 Fork of `indexer-service-rs`. Stateless, horizontally scalable.
 
@@ -494,7 +494,7 @@ TAP aggregator: `https://tap-aggregator.network.thegraph.com`
 | Lava Network | On-chain QoS scoring + cross-ref | LAVA | 30+ | Spec-based chain definitions; chain-funded pools |
 | Infura DIN | Watcher nodes + stake-backed SLAs | — (EigenLayer) | 30+ | 13B+ req/month; progressive decentralisation |
 | Ankr | Internal QoS | ANKR | 80+ | 1T+ monthly requests; method-weighted pricing |
-| dRPC.org | AI routing (no on-chain) | — | 90+ | No token; curated providers |
+| Dispatch.org | AI routing (no on-chain) | — | 90+ | No token; curated providers |
 | **This service** | **Merkle proofs (Tier 1) + quorum** | **GRT** | **10+ chains** | **Integrated with subgraphs, Substreams, Amp** |
 
 The Graph's competitive moat: RPC + indexed data (subgraphs) + streaming (Substreams) + SQL analytics (Amp) under one economic and security umbrella. One stake, one payment system, one network.

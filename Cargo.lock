@@ -1266,31 +1266,14 @@ dependencies = [
 ]
 
 [[package]]
-name = "displaydoc"
-version = "0.2.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "97369cbbc041bc366949bc74d34658d6cda5621039731c6310521892a3a20ae0"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.117",
-]
-
-[[package]]
-name = "dotenvy"
-version = "0.15.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1aaf95b3e5c8f23aa320147307562d361db0ae0d51242340f558153b4eb2439b"
-
-[[package]]
-name = "drpc-gateway"
+name = "dispatch-gateway"
 version = "0.1.0"
 dependencies = [
  "alloy-primitives",
  "anyhow",
  "arc-swap",
  "axum",
- "drpc-tap",
+ "dispatch-tap",
  "futures-util",
  "governor",
  "hex",
@@ -1312,7 +1295,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "drpc-oracle"
+name = "dispatch-oracle"
 version = "0.1.0"
 dependencies = [
  "alloy",
@@ -1328,7 +1311,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "drpc-service"
+name = "dispatch-service"
 version = "0.1.0"
 dependencies = [
  "alloy",
@@ -1336,7 +1319,7 @@ dependencies = [
  "alloy-sol-types",
  "anyhow",
  "axum",
- "drpc-tap",
+ "dispatch-tap",
  "futures-util",
  "hex",
  "k256",
@@ -1355,12 +1338,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "drpc-smoke"
+name = "dispatch-smoke"
 version = "0.1.0"
 dependencies = [
  "alloy-primitives",
  "anyhow",
- "drpc-tap",
+ "dispatch-tap",
  "hex",
  "k256",
  "rand 0.8.5",
@@ -1371,7 +1354,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "drpc-tap"
+name = "dispatch-tap"
 version = "0.1.0"
 dependencies = [
  "alloy-primitives",
@@ -1384,6 +1367,23 @@ dependencies = [
  "serde_json",
  "thiserror 1.0.69",
 ]
+
+[[package]]
+name = "displaydoc"
+version = "0.2.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "97369cbbc041bc366949bc74d34658d6cda5621039731c6310521892a3a20ae0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.117",
+]
+
+[[package]]
+name = "dotenvy"
+version = "0.15.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1aaf95b3e5c8f23aa320147307562d361db0ae0d51242340f558153b4eb2439b"
 
 [[package]]
 name = "dunce"

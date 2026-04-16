@@ -1,11 +1,11 @@
 version: "3.9"
 
-# ── dRPC full-stack ────────────────────────────────────────────────────────────
+# ── Dispatch full-stack ────────────────────────────────────────────────────────────
 #
 # Services:
-#   drpc-gateway  — QoS-aware gateway, TAP receipt signing, /metrics, /ws
-#   drpc-service  — Indexer service, JSON-RPC proxy, TAP receipt validation
-#   drpc-oracle   — Block header oracle; submits L1 state roots to Arbitrum for Tier 1 fraud proofs
+#   dispatch-gateway  — QoS-aware gateway, TAP receipt signing, /metrics, /ws
+#   dispatch-service  — Indexer service, JSON-RPC proxy, TAP receipt validation
+#   dispatch-oracle   — Block header oracle; submits L1 state roots to Arbitrum for Tier 1 fraud proofs
 #   postgres      — PostgreSQL for TAP receipt and RAV persistence
 #
 # Quick start:
@@ -20,18 +20,18 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: drpc
-      POSTGRES_PASSWORD: drpc
-      POSTGRES_DB: drpc
+      POSTGRES_USER: dispatch
+      POSTGRES_PASSWORD: dispatch
+      POSTGRES_DB: dispatch
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U drpc"]
+      test: ["CMD-SHELL", "pg_isready -U dispatch"]
       interval: 5s
       timeout: 5s
       retries: 10
 
-  drpc-service:
+  dispatch-service:
     build:
       context: ..
       dockerfile: docker/Dockerfile.service
@@ -42,9 +42,9 @@ services:
     ports:
       - "7700:7700"
     volumes:
-      - ./config.toml:/etc/drpc/config.toml:ro
+      - ./config.toml:/etc/dispatch/config.toml:ro
     environment:
-      DRPC_CONFIG: /etc/drpc/config.toml
+      DISPATCH_CONFIG: /etc/dispatch/config.toml
       RUST_LOG: info
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:7700/health || exit 1"]
@@ -52,20 +52,20 @@ services:
       timeout: 5s
       retries: 6
 
-  drpc-gateway:
+  dispatch-gateway:
     build:
       context: ..
       dockerfile: docker/Dockerfile.gateway
     restart: unless-stopped
     depends_on:
-      drpc-service:
+      dispatch-service:
         condition: service_healthy
     ports:
       - "8080:8080"
     volumes:
-      - ./gateway.toml:/etc/drpc/gateway.toml:ro
+      - ./gateway.toml:/etc/dispatch/gateway.toml:ro
     environment:
-      DRPC_GATEWAY_CONFIG: /etc/drpc/gateway.toml
+      DISPATCH_GATEWAY_CONFIG: /etc/dispatch/gateway.toml
       RUST_LOG: info
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:8080/health || exit 1"]
@@ -73,15 +73,15 @@ services:
       timeout: 5s
       retries: 6
 
-  drpc-oracle:
+  dispatch-oracle:
     build:
       context: ..
       dockerfile: docker/Dockerfile.oracle
     restart: unless-stopped
     volumes:
-      - ./oracle.toml:/etc/drpc/oracle.toml:ro
+      - ./oracle.toml:/etc/dispatch/oracle.toml:ro
     environment:
-      DRPC_ORACLE_CONFIG: /etc/drpc/oracle.toml
+      DISPATCH_ORACLE_CONFIG: /etc/dispatch/oracle.toml
       RUST_LOG: info
 
 volumes:

@@ -1,0 +1,36 @@
+[package]
+name = "dispatch-gateway"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Dispatch gateway — QoS-aware provider selection, TAP receipt signing, JSON-RPC routing"
+
+[[bin]]
+name = "dispatch-gateway"
+path = "src/main.rs"
+
+[dependencies]
+dispatch-tap.workspace = true
+
+tokio.workspace = true
+futures-util.workspace = true
+axum.workspace = true
+tower.workspace = true
+tower-http.workspace = true
+reqwest.workspace = true
+tokio-tungstenite.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+toml.workspace = true
+alloy-primitives.workspace = true
+k256.workspace = true
+thiserror.workspace = true
+anyhow.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+prometheus.workspace = true
+lazy_static.workspace = true
+governor.workspace = true
+arc-swap.workspace = true
+hex.workspace = true
+rand.workspace = true

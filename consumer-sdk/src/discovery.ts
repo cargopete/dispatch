@@ -36,7 +36,7 @@ interface SubgraphResponse {
 }
 
 /**
- * Query the dRPC subgraph for active providers serving a given chain and tier.
+ * Query the Dispatch subgraph for active providers serving a given chain and tier.
  *
  * Providers are returned with a default `qosScore` of 0.5.
  * The caller is responsible for updating scores based on observed latency.

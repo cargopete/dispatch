@@ -59,7 +59,7 @@ contract Register is Script {
 
         vm.stopBroadcast();
 
-        console2.log("\nDone. Update your drpc-service config:");
+        console2.log("\nDone. Update your dispatch-service config:");
         console2.log("  [tap] data_service_address =", vm.toString(service_));
     }
 

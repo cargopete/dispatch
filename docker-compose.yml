@@ -1,15 +1,15 @@
 services:
   # ── Indexer service (one per node) ────────────────────────────────────────
-  drpc-service:
+  dispatch-service:
     build:
       context: .
       target: service
     ports:
       - "7700:7700"
     volumes:
-      - ./docker/config.toml:/etc/drpc/config.toml:ro
+      - ./docker/config.toml:/etc/dispatch/config.toml:ro
     environment:
-      DRPC_CONFIG: /etc/drpc/config.toml
+      DISPATCH_CONFIG: /etc/dispatch/config.toml
       RUST_LOG: info
     depends_on:
       postgres:
@@ -17,32 +17,32 @@ services:
     restart: unless-stopped
 
   # ── Gateway (routes requests to indexers) ─────────────────────────────────
-  drpc-gateway:
+  dispatch-gateway:
     build:
       context: .
       target: gateway
     ports:
       - "8080:8080"
     volumes:
-      - ./docker/gateway.toml:/etc/drpc/gateway.toml:ro
+      - ./docker/gateway.toml:/etc/dispatch/gateway.toml:ro
     environment:
-      DRPC_GATEWAY_CONFIG: /etc/drpc/gateway.toml
+      DISPATCH_GATEWAY_CONFIG: /etc/dispatch/gateway.toml
       RUST_LOG: info
     restart: unless-stopped
 
-  # ── PostgreSQL (optional — drpc-service persists TAP receipts here) ───────
+  # ── PostgreSQL (optional — dispatch-service persists TAP receipts here) ───────
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: drpc
-      POSTGRES_PASSWORD: drpc
-      POSTGRES_DB: drpc
+      POSTGRES_USER: dispatch
+      POSTGRES_PASSWORD: dispatch
+      POSTGRES_DB: dispatch
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U drpc"]
+      test: ["CMD-SHELL", "pg_isready -U dispatch"]
       interval: 5s
       timeout: 5s
       retries: 10

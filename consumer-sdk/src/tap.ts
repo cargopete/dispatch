@@ -29,7 +29,7 @@ export interface TapDomain {
  * Sign a TAP receipt using EIP-712 typed data signing.
  *
  * The consumer (gateway) signs one receipt per request and attaches it in the
- * `X-Drpc-Tap-Receipt` header. The provider batches receipts into a RAV and
+ * `X-Dispatch-Tap-Receipt` header. The provider batches receipts into a RAV and
  * submits it on-chain via `collect()`.
  */
 export async function signReceipt(
@@ -67,7 +67,7 @@ export async function signReceipt(
 }
 
 /**
- * Serialise a SignedTapReceipt to the JSON wire format expected by drpc-service.
+ * Serialise a SignedTapReceipt to the JSON wire format expected by dispatch-service.
  *
  * Uses template literals instead of JSON.stringify because:
  * 1. JSON.stringify throws on BigInt values.

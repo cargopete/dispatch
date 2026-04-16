@@ -25,7 +25,7 @@ eip712_verifying_contract = "0x8f69F5C07477Ac46FBc491B1E6D91E2be0111A9e"
 max_receipt_age_ns = 30_000_000_000  # 30 seconds
 
 [database]
-url = "postgres://drpc:drpc@localhost:5432/drpc"
+url = "postgres://dispatch:dispatch@localhost:5432/dispatch"
 
 [chains]
 supported = [1, 42161, 10, 8453]

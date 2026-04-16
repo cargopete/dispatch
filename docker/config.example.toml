@@ -1,8 +1,8 @@
-# drpc-service configuration
+# dispatch-service configuration
 # Copy to docker/config.toml and fill in your values before running.
 #
-# docker-compose mounts this file as /etc/drpc/config.toml inside the container.
-# Override the path with: DRPC_CONFIG=/path/to/config.toml
+# docker-compose mounts this file as /etc/dispatch/config.toml inside the container.
+# Override the path with: DISPATCH_CONFIG=/path/to/config.toml
 
 [server]
 host = "0.0.0.0"
@@ -26,7 +26,7 @@ authorized_senders = [
 ]
 
 # EIP-712 domain — must match the deployed GraphTallyCollector.
-eip712_domain_name = "TAP"
+eip712_domain_name = "GraphTallyCollector"
 
 # Arbitrum One (default). Override for other networks.
 # eip712_chain_id = 42161
@@ -37,7 +37,7 @@ eip712_domain_name = "TAP"
 
 # Gateway base URL for RAV aggregation.
 # Required for the payment loop to function — set this to your gateway's internal URL.
-aggregator_url = "http://drpc-gateway:8080"
+aggregator_url = "http://dispatch-gateway:8080"
 
 # How often to run RAV aggregation, in seconds (default: 60).
 # aggregation_interval_secs = 60
@@ -74,10 +74,10 @@ supported = [1, 42161]
 # Optional — remove this section entirely to run without a database.
 # When present, TAP receipts are persisted for accounting / auditing.
 [database]
-url = "postgres://drpc:drpc@postgres:5432/drpc"
+url = "postgres://dispatch:dispatch@postgres:5432/dispatch"
 
 # On-chain RAV collection. Omit this section entirely to disable.
-# When enabled, drpc-service periodically calls RPCDataService.collect() to
+# When enabled, dispatch-service periodically calls RPCDataService.collect() to
 # redeem accumulated RAV value and transfer GRT to the provider.
 # The operator_private_key from [indexer] is used to sign the transaction.
 # [collector]

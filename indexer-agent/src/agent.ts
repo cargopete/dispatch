@@ -1,4 +1,6 @@
 import {
+  type Account,
+  type Chain,
   createPublicClient,
   createWalletClient,
   defineChain,
@@ -82,7 +84,7 @@ export class IndexerAgent {
   private readonly config: AgentConfig;
   private readonly publicClient: ReturnType<typeof createPublicClient>;
   private readonly walletClient: ReturnType<typeof createWalletClient>;
-  private readonly contract: { address: `0x${string}`; abi: typeof ABI };
+  private readonly contract: { address: `0x${string}`; abi: typeof ABI; chain: Chain; account: Account };
 
   constructor(config: AgentConfig) {
     this.config = config;
@@ -111,7 +113,7 @@ export class IndexerAgent {
       transport: http(config.arbitrumRpcUrl),
     });
 
-    this.contract = { address: config.rpcDataServiceAddress, abi: ABI };
+    this.contract = { address: config.rpcDataServiceAddress, abi: ABI, chain, account };
   }
 
   async start(): Promise<void> {

@@ -1,4 +1,4 @@
-# dRPC Data Service — Roadmap
+# Dispatch Data Service — Roadmap
 
 Aligns with The Graph's 2026 Technical Roadmap ("Experimental JSON-RPC Data Service", Q3 2026).
 
@@ -11,8 +11,8 @@ Aligns with The Graph's 2026 Technical Roadmap ("Experimental JSON-RPC Data Serv
 - [x] `RPCDataService.sol` — register, startService, stopService, collect, slash
 - [x] `paymentsDestination` — decouple payment recipient from operator key
 - [x] Explicit `QueryFee` enforcement in `collect()` — revert on other payment types
-- [x] `drpc-service` (Rust) — JSON-RPC reverse proxy with TAP receipt validation
-- [x] `drpc-gateway` (Rust) — QoS-aware routing, TAP receipt signing, metrics
+- [x] `dispatch-service` (Rust) — JSON-RPC reverse proxy with TAP receipt validation
+- [x] `dispatch-gateway` (Rust) — QoS-aware routing, TAP receipt signing, metrics
 - [x] RPC attestation scheme — `keccak256(method || params || response || blockHash)` signed by indexer
 - [x] RPC network subgraph — indexes RPCDataService events for provider discovery
 - [x] Integration tests — mock HorizonStaking only; real GraphTallyCollector/PaymentsEscrow/GraphPayments
@@ -34,7 +34,7 @@ Originally targeted Q4 2026. Completed ahead of schedule.
 - [x] Provider capability tiers — Standard / Archive / Debug; gateway filters by required tier per method
 - [x] Dynamic provider discovery — subgraph-driven registry with configurable poll interval
 - [x] Per-IP rate limiting — token-bucket via `governor`, configurable RPS + burst
-- [x] Prometheus metrics — `drpc_requests_total`, `drpc_request_duration_seconds`
+- [x] Prometheus metrics — `dispatch_requests_total`, `dispatch_request_duration_seconds`
 - [x] JSON-RPC batch support — concurrent dispatch, per-item error isolation
 
 ---
@@ -45,7 +45,7 @@ Originally targeted Q1 2027.
 
 - [x] WebSocket subscriptions — `eth_subscribe` / `eth_unsubscribe` proxied bidirectionally
 - [x] Tier 1 fraud proof slashing — `slash()` with EIP-1186 MPT proofs via `StateProofVerifier.sol`
-- [x] Block header trust oracle — `drpc-oracle` polls L1, submits state roots to Arbitrum for on-chain verification
+- [x] Block header trust oracle — `dispatch-oracle` polls L1, submits state roots to Arbitrum for on-chain verification
 - [x] Archive tier routing — `requires_archive()` inspects block parameters; hex block numbers, `"earliest"`, and JSON integers route to Archive tier
 - [x] `debug_*` / `trace_*` routing — per-chain capability map (not global union); providers advertising Debug on chain X are only routed debug requests for chain X
 
@@ -74,7 +74,7 @@ Originally targeted Q3 2027.
   - Subgraph-driven provider discovery (`discovery.ts`) — live registry via GraphQL
   - Weighted QoS selection (`selector.ts`) — probability proportional to score; EMA update after each request
   - Attestation verification utilities (`attestation.ts`) — hash computation + signer recovery
-  - `DRPCClient` (`client.ts`) — single-call `request()` with automatic receipt signing, provider selection, QoS tracking, and 60s discovery TTL
+  - `DISPATCHClient` (`client.ts`) — single-call `request()` with automatic receipt signing, provider selection, QoS tracking, and 60s discovery TTL
 - [x] Rewards pool — `depositRewardsPool` / `withdrawRewardsPool` (governance); `claimRewards()` (provider)
   - Issuance accrues on every `collect()`: `reward = fees × issuancePerCU / 1e18`, capped at remaining pool
   - `pendingRewards` mapping stores per-recipient unclaimed GRT
@@ -86,12 +86,12 @@ Originally targeted Q3 2027.
 
 All five phases are feature-complete. The following work remains before a live network run:
 
-- [ ] **Contract deployment** — run `forge script script/Deploy.s.sol` on Arbitrum Sepolia; propagate address to all configs
-- [ ] **Subgraph deployment** — `graph deploy` with correct `startBlock`; update `subgraphUrl` in all configs and SDK examples
-- [ ] **End-to-end integration test** — full cycle: consumer → gateway → drpc-service → backend node → TAP receipt → `RPCDataService.collect()`; currently only unit-tested
-- [ ] **npm publish** — `consumer-sdk` and `indexer-agent` need `publishConfig`, `files`, and `prepublishOnly` build hook before publishing to npm
-- [ ] **Indexer agent tests** — agent has no automated tests; basic Anvil-backed smoke test before anyone runs it against mainnet
-- [ ] **Light security review** — `RPCDataService.sol` handles real GRT; worth a focused audit pass before live funds
+- [x] **Contract deployment** — `RPCDataService` deployed on Arbitrum One at `0x73846272813065c3e4efdb3fb82e0d128c8c2364`; 10 chains registered
+- [x] **Subgraph deployment** — deployed to The Graph Studio; endpoint `https://api.studio.thegraph.com/query/1747796/rpc-network/v0.1.1`
+- [x] **End-to-end integration test** — full cycle: consumer → gateway → dispatch-service → backend node → TAP receipt → `RPCDataService.collect()`; 7/7 tests passing
+- [x] **npm publish** — `/consumer-sdk` and `/indexer-agent` published to npm under the `@graph-dispatch` org
+- [x] **Indexer agent tests** — 4/4 Anvil-backed smoke tests passing (idempotent reconcile, stop, start, graceful shutdown)
+- [x] **Light security review** — 2 mediums fixed (cross-chain slash validation, guardian revocation); redeployed at `0x73846272813065c3e4efdb3fb82e0d128c8c2364`
 
 ---
 

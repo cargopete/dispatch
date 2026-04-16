@@ -1,0 +1,17 @@
+[package]
+name = "dispatch-tap"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "TAP v2 (GraphTally) types, EIP-712 hashing, and receipt signing"
+
+[dependencies]
+alloy-primitives.workspace = true
+alloy-sol-types.workspace = true
+k256.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+hex.workspace = true
+rand.workspace = true
+thiserror.workspace = true
+anyhow.workspace = true

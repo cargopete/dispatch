@@ -1,8 +1,8 @@
 {
   "arbitrum-one": {
     "RPCDataService": {
-      "address": "0x0000000000000000000000000000000000000000",
-      "startBlock": 0
+      "address": "0x73846272813065c3e4efdb3fb82e0d128c8c2364",
+      "startBlock": 452702455
     }
   },
   "arbitrum-sepolia": {

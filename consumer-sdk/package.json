@@ -1,7 +1,7 @@
 {
-  "name": "@drpc/consumer-sdk",
+  "name": "/consumer-sdk",
   "version": "0.1.0",
-  "description": "Consumer SDK for the dRPC decentralised JSON-RPC network",
+  "description": "Consumer SDK for the Dispatch decentralised JSON-RPC network",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

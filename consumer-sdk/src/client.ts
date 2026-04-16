@@ -12,7 +12,7 @@ export interface ClientConfig {
   dataServiceAddress: `0x${string}`;
   /** GraphTallyCollector address — EIP-712 verifying contract for TAP receipts. */
   graphTallyCollector: `0x${string}`;
-  /** dRPC subgraph URL for provider discovery. */
+  /** Dispatch subgraph URL for provider discovery. */
   subgraphUrl: string;
   /** Consumer's private key used to sign TAP receipts. */
   signerPrivateKey: `0x${string}`;
@@ -32,7 +32,7 @@ export interface ClientConfig {
   baseValuePerRequest?: bigint;
 }
 
-export class DRPCClient {
+export class DISPATCHClient {
   private readonly chainId: number;
   private readonly dataServiceAddress: `0x${string}`;
   private readonly graphTallyCollector: `0x${string}`;
@@ -61,7 +61,7 @@ export class DRPCClient {
   }
 
   /**
-   * Send a JSON-RPC request to a dRPC provider.
+   * Send a JSON-RPC request to a Dispatch provider.
    *
    * Handles provider discovery, TAP receipt signing, and QoS score updates.
    * Returns the raw JSON-RPC response object.

@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { execFileSync } from "child_process";
 import { readFileSync } from "fs";
+import * as os from "os";
 import * as path from "path";
 import * as net from "net";
 import { ChildProcess, spawn } from "child_process";
@@ -9,6 +10,9 @@ import { IndexerAgent } from "./agent.js";
 
 const ROOT = path.resolve(import.meta.dirname, "../..");
 const CONTRACTS = path.join(ROOT, "contracts");
+const HOME = os.homedir();
+const FORGE = path.join(HOME, ".foundry", "bin", "forge");
+const ANVIL = path.join(HOME, ".foundry", "bin", "anvil");
 
 const anvilChain = defineChain({
   id: 31337,
@@ -64,15 +68,15 @@ function makeAgent(services: Array<{ chainId: number; tier: number }>) {
 }
 
 beforeAll(async () => {
-  anvilProc = spawn("anvil", ["--port", "8545", "--chain-id", "31337", "--accounts", "5"], {
+  anvilProc = spawn(ANVIL, ["--port", "8545", "--chain-id", "31337", "--accounts", "5"], {
     stdio: ["ignore", "pipe", "pipe"],
   });
   await waitForPort(8545);
 
   execFileSync(
-    "forge",
+    FORGE,
     [
-      "script", "script/SetupE2E.s.sol",
+      "script", "script/SetupE2E.s.sol:SetupE2E",
       "--rpc-url", "http://127.0.0.1:8545",
       "--broadcast", "--skip-simulation",
     ],

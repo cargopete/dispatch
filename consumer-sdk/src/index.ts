@@ -18,7 +18,7 @@ export { selectProvider, updateQosScore } from "./selector.js";
 
 export { computeAttestationHash, recoverAttestationSigner } from "./attestation.js";
 
-export { DRPCClient } from "./client.js";
+export { DISPATCHClient } from "./client.js";
 export type { ClientConfig } from "./client.js";
 
 export { methodCU, computeReceiptValue } from "./cu.js";

@@ -1,0 +1,21 @@
+[gateway]
+host = "127.0.0.1"
+port = 8080
+
+[tap]
+signer_private_key = "0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6"
+data_service_address = "0x9A9f2CCfdE556A7E9Ff0848998Aa4a0CFD8863AE"
+base_price_per_cu = 4000000000000
+eip712_domain_name = "TAP"
+eip712_chain_id = 31337
+eip712_verifying_contract = "0x959922bE3CAee4b8Cd9a407cc3ac1C251C2007B1"
+
+[qos]
+probe_interval_secs = 3600
+concurrent_k = 1
+
+[[providers]]
+address = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+endpoint = "http://127.0.0.1:7700"
+chains = [31337]
+capabilities = ["standard"]

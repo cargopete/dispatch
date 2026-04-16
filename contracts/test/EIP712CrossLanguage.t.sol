@@ -6,10 +6,10 @@ import {Test} from "forge-std/Test.sol";
 // ---------------------------------------------------------------------------
 // Cross-language EIP-712 compatibility test.
 //
-// Verifies that drpc-tap (Rust) and Solidity compute identical EIP-712 digests
+// Verifies that dispatch-tap (Rust) and Solidity compute identical EIP-712 digests
 // for the TAP Receipt struct with fixed parameters.
 //
-// Fixed parameters (must match crates/drpc-tap/src/eip712.rs::eip712_hash_matches_solidity_golden):
+// Fixed parameters (must match crates/dispatch-tap/src/eip712.rs::eip712_hash_matches_solidity_golden):
 //   domain  : name="TAP", version="1", chainId=31337,
 //             verifyingContract=0x1212121212121212121212121212121212121212
 //   receipt : data_service    = 0x0101010101010101010101010101010101010101
@@ -30,7 +30,7 @@ contract EIP712CrossLanguageTest is Test {
         "Receipt(address data_service,address service_provider,uint64 timestamp_ns,uint64 nonce,uint128 value,bytes metadata)"
     );
 
-    // Hash independently computed by Rust drpc-tap crate (see eip712_hash_matches_solidity_golden).
+    // Hash independently computed by Rust dispatch-tap crate (see eip712_hash_matches_solidity_golden).
     bytes32 private constant EXPECTED_HASH = 0x6a496be73e1ebc77612afedde0307b2099cc116600e590ce743771770f85d5ba;
 
     // Ethereum address corresponding to private key = 1.
@@ -68,7 +68,7 @@ contract EIP712CrossLanguageTest is Test {
         assertEq(_digest(), EXPECTED_HASH);
     }
 
-    /// Rust-produced signature (drpc-tap, privKey=1) must recover the correct signer
+    /// Rust-produced signature (dispatch-tap, privKey=1) must recover the correct signer
     /// via Solidity ecrecover. Proves Rust and Solidity agree on the hash bytes.
     function test_rust_signature_recovers_correct_signer() public {
         bytes32 r = 0x3a0757571431670524cb9d59ae653a3923f354d5bcff13a75732eab539efb8c1;

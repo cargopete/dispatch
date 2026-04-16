@@ -1,10 +1,10 @@
-# dRPC Data Service — Deliverables
+# Dispatch Data Service — Deliverables
 
 ## What Horizon already provides (reuse as-is)
 
 | Component | Notes |
 |---|---|
-| HorizonStaking | Provision model maps directly to dRPC |
+| HorizonStaking | Provision model maps directly to Dispatch |
 | GraphPayments | Generic fee distribution — no changes needed |
 | PaymentsEscrow | Same escrow model for RPC payments |
 | GraphTallyCollector | TAP v2 — already includes `data_service` field |
@@ -38,7 +38,7 @@ Key responsibilities:
 - `slash` — Tier 1 fraud proof: EIP-1186 MPT proof verification via `StateProofVerifier.sol`; challenger bounty at 50% of slash amount
 - On-chain chain registry: `mapping(uint256 => ChainConfig)` with governance allowlist
 
-### 2. `drpc-indexer-service` (Rust)
+### 2. `dispatch-indexer-service` (Rust)
 Fork of `indexer-service-rs`. Lightweight JSON-RPC reverse proxy.
 
 Key responsibilities:

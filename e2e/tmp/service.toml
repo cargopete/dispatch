@@ -1,0 +1,21 @@
+[server]
+host = "127.0.0.1"
+port = 7700
+
+[indexer]
+service_provider_address = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+operator_private_key = "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d"
+
+[tap]
+data_service_address = "0x9A9f2CCfdE556A7E9Ff0848998Aa4a0CFD8863AE"
+authorized_senders = ["0x90F79bf6EB2c4f870365E785982E1f101E93b906"]
+eip712_domain_name = "TAP"
+eip712_chain_id = 31337
+eip712_verifying_contract = "0x959922bE3CAee4b8Cd9a407cc3ac1C251C2007B1"
+max_receipt_age_ns = 300000000000
+
+[chains]
+supported = [31337]
+
+[chains.backends]
+"31337" = "http://127.0.0.1:8545"

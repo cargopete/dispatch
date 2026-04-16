@@ -2,7 +2,7 @@
 pragma solidity ^0.8.27;
 
 /// @title IRPCDataService
-/// @notice Interface for the dRPC data service on The Graph Protocol's Horizon framework.
+/// @notice Interface for the Dispatch data service on The Graph Protocol's Horizon framework.
 ///
 /// A provider (indexer) lifecycle:
 ///   register → startService (per chain/tier) → [collect]* → stopService → deregister

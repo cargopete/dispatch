@@ -18,7 +18,7 @@ export interface AgentConfig {
   operatorPrivateKey: `0x${string}`;
   /** On-chain provider address (may differ from the signing key) */
   providerAddress: `0x${string}`;
-  /** Public HTTPS endpoint of this indexer's drpc-service instance */
+  /** Public HTTPS endpoint of this indexer's dispatch-service instance */
   endpoint: string;
   /** Geohash string used for geographic routing, e.g. "u1hx" */
   geoHash: string;

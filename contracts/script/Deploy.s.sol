@@ -9,6 +9,7 @@ import {RPCDataService} from "../src/RPCDataService.sol";
 /// Usage (Arbitrum One mainnet):
 ///   forge script script/Deploy.s.sol \
 ///     --rpc-url arbitrum_one \
+///     --private-key $PRIVATE_KEY \
 ///     --broadcast \
 ///     --verify \
 ///     -vvvv
@@ -16,6 +17,7 @@ import {RPCDataService} from "../src/RPCDataService.sol";
 /// Usage (Arbitrum Sepolia testnet):
 ///   forge script script/Deploy.s.sol \
 ///     --rpc-url arbitrum_sepolia \
+///     --private-key $PRIVATE_KEY \
 ///     --broadcast \
 ///     --verify \
 ///     -vvvv

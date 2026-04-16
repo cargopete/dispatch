@@ -130,30 +130,30 @@ capabilities = ["standard"]
   // 5. Build Rust binaries
   await run(CARGO, ["build", "--bins"], { cwd: ROOT });
 
-  // 6. Start drpc-service
+  // 6. Start dispatch-service
   service = spawnProcess(
-    path.join(ROOT, "target/debug/drpc-service"),
+    path.join(ROOT, "target/debug/dispatch-service"),
     [],
     {
       cwd: ROOT,
       env: {
         ...ENV,
-        DRPC_CONFIG: path.join(TMP, "service.toml"),
+        DISPATCH_CONFIG: path.join(TMP, "service.toml"),
         RUST_LOG: "info",
       },
     }
   );
   await waitForPort(7700);
 
-  // 7. Start drpc-gateway
+  // 7. Start dispatch-gateway
   gateway = spawnProcess(
-    path.join(ROOT, "target/debug/drpc-gateway"),
+    path.join(ROOT, "target/debug/dispatch-gateway"),
     [],
     {
       cwd: ROOT,
       env: {
         ...ENV,
-        DRPC_GATEWAY_CONFIG: path.join(TMP, "gateway.toml"),
+        DISPATCH_GATEWAY_CONFIG: path.join(TMP, "gateway.toml"),
         RUST_LOG: "info",
       },
     }

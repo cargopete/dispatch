@@ -8,8 +8,8 @@ import {
   ProviderRegistered,
   ProviderDeregistered,
   PaymentsDestinationSet,
-  ServiceStarted,
-  ServiceStopped,
+  ServiceStarted1 as ServiceStarted,
+  ServiceStopped1 as ServiceStopped,
   FraudProofSubmitted,
   MinThawingPeriodSet,
   RewardsAccrued,
@@ -156,7 +156,6 @@ export function handleChainProposed(event: ChainProposed): void {
   proposal.bondAmount = event.params.bondAmount;
   proposal.proposedAt = event.block.timestamp;
   proposal.resolvedAt = null;
-  proposal.approved = null;
   proposal.save();
 }
 

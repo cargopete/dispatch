@@ -9,7 +9,7 @@ import type { AttestationPayload } from "./types.js";
 /**
  * Compute the attestation hash for a JSON-RPC response.
  *
- * Mirrors the Rust implementation in `crates/drpc-service/src/attestation.rs`:
+ * Mirrors the Rust implementation in `crates/dispatch-service/src/attestation.rs`:
  *
  *   keccak256(abi.encode(
  *     uint64  chainId,
