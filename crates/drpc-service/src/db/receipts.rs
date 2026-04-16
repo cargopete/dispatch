@@ -97,6 +97,58 @@ pub struct RavRow<'a> {
     pub last_updated: i64,
 }
 
+// ---------------------------------------------------------------------------
+// Collector helpers
+// ---------------------------------------------------------------------------
+
+/// A RAV row ready for on-chain submission.
+pub struct RedeemableRav {
+    pub collection_id: String,
+    pub payer_address: String,
+    pub service_provider: String,
+    pub data_service: String,
+    pub timestamp_ns: i64,
+    pub value_aggregate: String,
+    pub signature: String,
+}
+
+/// Fetch all RAVs that have not yet been submitted on-chain.
+pub async fn fetch_unredeemed_ravs(pool: &Pool) -> anyhow::Result<Vec<RedeemableRav>> {
+    let rows = sqlx::query(
+        r#"
+        SELECT collection_id, payer_address, service_provider, data_service,
+               timestamp_ns, value_aggregate, signature
+        FROM   tap_ravs
+        WHERE  redeemed = false
+        ORDER  BY last_updated ASC
+        "#,
+    )
+    .fetch_all(pool)
+    .await?;
+
+    Ok(rows
+        .into_iter()
+        .map(|r| RedeemableRav {
+            collection_id: r.get("collection_id"),
+            payer_address: r.get("payer_address"),
+            service_provider: r.get("service_provider"),
+            data_service: r.get("data_service"),
+            timestamp_ns: r.get("timestamp_ns"),
+            value_aggregate: r.get("value_aggregate"),
+            signature: r.get("signature"),
+        })
+        .collect())
+}
+
+/// Mark a RAV as redeemed after successful on-chain collection.
+pub async fn mark_rav_redeemed(pool: &Pool, collection_id: &str) -> anyhow::Result<()> {
+    sqlx::query("UPDATE tap_ravs SET redeemed = true WHERE collection_id = $1")
+        .bind(collection_id)
+        .execute(pool)
+        .await?;
+    Ok(())
+}
+
 /// Insert or update the RAV for a given collection_id.
 /// `value_aggregate` and `timestamp_ns` are always replaced with the latest values.
 pub async fn upsert_rav(pool: &Pool, rav: RavRow<'_>) -> anyhow::Result<()> {

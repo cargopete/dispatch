@@ -7,24 +7,27 @@ A decentralised JSON-RPC data service built on [The Graph Protocol's Horizon fra
 
 Inspired by the [Q3 2026 "Experimental JSON-RPC Data Service"](https://thegraph.com/blog/graph-protocol-2026-technical-roadmap/) direction in The Graph's 2026 Technical Roadmap — but this codebase is an independent community effort, not an official implementation.
 
-**Implementation status:** all five phases are feature-complete and deployed. `RPCDataService` is live on Arbitrum One at `0x73846272813065c3e4efdb3fb82e0d128c8c2364`. The subgraph, npm packages, and end-to-end test suite are all live. Run the full payment loop locally with `cd demo && npm install && npm start`.
+**Implementation status:** the contract, subgraph, npm packages, and Rust binaries are all deployed. The first provider is live and serving traffic. The off-chain payment flow (receipt signing → RAV aggregation) is implemented; on-chain fee collection (`collect()`) is implemented but not yet exercised on the live provider. The oracle is not running. See [Network status](#network-status) for the honest breakdown.
 
 ---
 
 ## Network status
 
-The network is live with its first active provider.
-
 | Component | Status |
 |---|---|
-| `RPCDataService` contract | Live on Arbitrum One |
-| Subgraph | Live on The Graph Studio |
-| npm packages | Published (`@graph-drpc/consumer-sdk`, `@graph-drpc/indexer-agent`) |
-| Active providers | **1** — `https://rpc.cargopete.com` (Arbitrum One, Standard + Archive) |
-| `drpc-oracle` | Not running — `slash()` fraud proofs require it |
-| Local demo | Working — full payment loop on Anvil with mock contracts |
+| `RPCDataService` contract | ✅ Live on Arbitrum One |
+| Subgraph | ✅ Live on The Graph Studio |
+| npm packages | ✅ Published (`@graph-drpc/consumer-sdk`, `@graph-drpc/indexer-agent`) |
+| Active providers | ✅ **1** — `https://rpc.cargopete.com` (Arbitrum One, Standard + Archive) |
+| Receipt signing & validation | ✅ Working — every request carries a signed EIP-712 TAP receipt |
+| RAV aggregation (off-chain) | ✅ Implemented — gateway `/rav/aggregate` endpoint; background task batches receipts into RAVs |
+| On-chain `collect()` | ⚠️ Implemented — code exists in `collector.rs`; not yet triggered on the live provider (needs `[collector]` config + sufficient receipt volume) |
+| Provider on-chain registration | ⚠️ Uncertain — indexer agent ran and `setOperator` was fixed, but not confirmed on-chain |
+| `drpc-oracle` | ❌ Not running — required for Tier 1 fraud proof slashing |
+| Multi-provider discovery | ❌ Gateway uses static provider config, not dynamic subgraph discovery |
+| Local demo | ✅ Working — full payment loop on Anvil with mock contracts |
 
-The first provider is live at `https://rpc.cargopete.com`, serving Arbitrum One (chain ID 42161) with Standard and Archive tiers. Validated end-to-end with `drpc-smoke`: consumer signs TAP receipts, gateway routes to the provider, provider forwards to Chainstack, real RPC responses returned.
+The first provider is live at `https://rpc.cargopete.com`, serving Arbitrum One (chain ID 42161) with Standard and Archive tiers. Validated end-to-end with `drpc-smoke`: consumer signs TAP receipts, gateway routes to provider, provider forwards to Chainstack, real RPC responses returned. The full GRT payment loop closes once `[collector]` is configured and enough receipts accumulate.
 
 ```
 drpc-smoke

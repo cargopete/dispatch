@@ -35,8 +35,9 @@ eip712_domain_name = "TAP"
 # Reject receipts older than this many nanoseconds (default: 30s).
 # max_receipt_age_ns = 30000000000
 
-# Gateway base URL for RAV aggregation. Omit to disable.
-# aggregator_url = "http://drpc-gateway:8080"
+# Gateway base URL for RAV aggregation.
+# Required for the payment loop to function — set this to your gateway's internal URL.
+aggregator_url = "http://drpc-gateway:8080"
 
 # How often to run RAV aggregation, in seconds (default: 60).
 # aggregation_interval_secs = 60
@@ -74,3 +75,12 @@ supported = [1, 42161]
 # When present, TAP receipts are persisted for accounting / auditing.
 [database]
 url = "postgres://drpc:drpc@postgres:5432/drpc"
+
+# On-chain RAV collection. Omit this section entirely to disable.
+# When enabled, drpc-service periodically calls RPCDataService.collect() to
+# redeem accumulated RAV value and transfer GRT to the provider.
+# The operator_private_key from [indexer] is used to sign the transaction.
+# [collector]
+# arbitrum_rpc_url = "https://arb1.arbitrum.io/rpc"
+# collect_interval_secs = 3600   # default: 1 hour
+# min_collect_value = 0          # minimum GRT wei before collecting (avoids dust)

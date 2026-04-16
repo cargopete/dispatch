@@ -10,6 +10,21 @@ pub struct Config {
     pub tap: TapConfig,
     pub chains: ChainsConfig,
     pub database: Option<DatabaseConfig>,
+    pub collector: Option<CollectorConfig>,
+}
+
+/// On-chain RAV collection config. Omit this section entirely to disable.
+#[derive(Debug, Deserialize, Clone)]
+pub struct CollectorConfig {
+    /// Arbitrum One RPC URL for submitting collect() transactions.
+    pub arbitrum_rpc_url: String,
+    /// How often to check for unredeemed RAVs (seconds). Default: 3600.
+    #[serde(default = "default_collect_interval_secs")]
+    pub collect_interval_secs: u64,
+    /// Skip RAVs whose value_aggregate is below this threshold (GRT wei).
+    /// Avoids spending gas on dust. Default: 0 (collect everything).
+    #[serde(default)]
+    pub min_collect_value: u128,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -97,4 +112,7 @@ fn default_max_receipt_age_ns() -> u64 {
 }
 fn default_aggregation_interval_secs() -> u64 {
     60
+}
+fn default_collect_interval_secs() -> u64 {
+    3600 // 1 hour
 }

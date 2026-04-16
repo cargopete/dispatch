@@ -5,6 +5,7 @@ use tower_http::trace::TraceLayer;
 
 use crate::{
     attestation::Attester,
+    collector,
     config::Config,
     db,
     routes,
@@ -42,9 +43,10 @@ pub async fn run(config: Config) -> Result<()> {
         None
     };
 
-    // Start RAV aggregation loop if a database and aggregator URL are both configured.
+    // Start background tasks if a database is configured.
     if let Some(ref pool) = db_pool {
         tap_aggregator::spawn(Arc::new(config.clone()), pool.clone());
+        collector::spawn(Arc::new(config.clone()), pool.clone());
     }
 
     let state = AppState {

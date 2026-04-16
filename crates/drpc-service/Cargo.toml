@@ -31,3 +31,6 @@ tracing.workspace = true
 tracing-subscriber.workspace = true
 sqlx.workspace = true
 hex.workspace = true
+
+# Ethereum provider + local signer for on-chain RAV collection
+alloy = { version = "0.5", features = ["provider-http", "signer-local", "contract"] }
