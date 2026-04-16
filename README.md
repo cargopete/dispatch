@@ -20,14 +20,20 @@ Inspired by the [Q3 2026 "Experimental JSON-RPC Data Service"](https://thegraph.
 | npm packages | ✅ Published (`@graph-drpc/consumer-sdk`, `@graph-drpc/indexer-agent`) |
 | Active providers | ✅ **1** — `https://rpc.cargopete.com` (Arbitrum One, Standard + Archive) |
 | Receipt signing & validation | ✅ Working — every request carries a signed EIP-712 TAP receipt |
-| RAV aggregation (off-chain) | ✅ Implemented — gateway `/rav/aggregate` endpoint; background task batches receipts into RAVs |
-| On-chain `collect()` | ⚠️ Implemented — code exists in `collector.rs`; not yet triggered on the live provider (needs `[collector]` config + sufficient receipt volume) |
-| Provider on-chain registration | ⚠️ Uncertain — indexer agent ran and `setOperator` was fixed, but not confirmed on-chain |
+| Receipt persistence | ✅ Working — stored in `tap_receipts` table in postgres |
+| RAV aggregation (off-chain) | ✅ Working — gateway `/rav/aggregate` batches receipts into signed RAVs every 60s |
+| On-chain `collect()` | ⚠️ Code works, reaches the chain — fails because the gateway signer has no GRT in PaymentsEscrow (no funded consumer yet) |
+| Provider on-chain registration | ✅ Confirmed — `registeredProviders[0xb43B...] = true` on Arbitrum One |
 | `drpc-oracle` | ❌ Not running — required for Tier 1 fraud proof slashing |
 | Multi-provider discovery | ❌ Gateway uses static provider config, not dynamic subgraph discovery |
 | Local demo | ✅ Working — full payment loop on Anvil with mock contracts |
 
-The first provider is live at `https://rpc.cargopete.com`, serving Arbitrum One (chain ID 42161) with Standard and Archive tiers. Validated end-to-end with `drpc-smoke`: consumer signs TAP receipts, gateway routes to provider, provider forwards to Chainstack, real RPC responses returned. The full GRT payment loop closes once `[collector]` is configured and enough receipts accumulate.
+The first provider is live and verified: provider IS registered on-chain, receipts accumulate correctly, and RAVs are being aggregated. The final step — on-chain GRT settlement — requires a consumer with GRT deposited into `PaymentsEscrow` on Arbitrum One. Once a real consumer funds the escrow, `collect()` will pull GRT to the provider automatically.
+
+To complete the loop as a self-funded test:
+1. Send some GRT to the gateway signer (`0x7dfb2175a77e922f060bc0a59f83be6d2f4b85d4`) on Arbitrum One
+2. From that address: `GRT.approve(PaymentsEscrow, amount)` then `PaymentsEscrow.deposit(provider, amount)`
+3. Run `drpc-smoke` to generate receipts — `collect()` will then settle GRT on the next hourly cycle
 
 ```
 drpc-smoke
