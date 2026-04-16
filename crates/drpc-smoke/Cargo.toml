@@ -1,0 +1,22 @@
+[package]
+name = "drpc-smoke"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "End-to-end smoke test: sign a TAP receipt and hit a live dRPC provider"
+
+[[bin]]
+name = "drpc-smoke"
+path = "src/main.rs"
+
+[dependencies]
+drpc-tap    = { path = "../drpc-tap" }
+tokio       = { workspace = true }
+reqwest     = { workspace = true }
+serde       = { workspace = true }
+serde_json  = { workspace = true }
+alloy-primitives = { workspace = true }
+k256        = { workspace = true }
+anyhow      = { workspace = true }
+hex         = { workspace = true }
+rand        = { workspace = true }

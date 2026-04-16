@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/drpc-service", "crates/drpc-tap", "crates/drpc-gateway", "crates/drpc-oracle"]
+members = ["crates/drpc-service", "crates/drpc-tap", "crates/drpc-gateway", "crates/drpc-oracle", "crates/drpc-smoke"]
 resolver = "2"
 
 [workspace.package]

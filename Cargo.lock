@@ -1354,6 +1354,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "drpc-smoke"
+version = "0.1.0"
+dependencies = [
+ "alloy-primitives",
+ "anyhow",
+ "drpc-tap",
+ "hex",
+ "k256",
+ "rand 0.8.5",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
 name = "drpc-tap"
 version = "0.1.0"
 dependencies = [
