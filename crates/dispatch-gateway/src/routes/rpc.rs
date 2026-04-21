@@ -166,7 +166,7 @@ async fn rpc_handler(
             .await
             .into_iter()
             .map(|r| match r {
-                Ok(resp) => serde_json::to_value(resp).unwrap_or(Value::Null),
+                Ok((resp, _attestation)) => serde_json::to_value(resp).unwrap_or(Value::Null),
                 Err(e) => json!({
                     "jsonrpc": "2.0",
                     "id": Value::Null,
@@ -180,8 +180,14 @@ async fn rpc_handler(
         Value::Object(_) => {
             let request: JsonRpcRequest = serde_json::from_value(body)
                 .map_err(|e| GatewayError::InvalidRequest(e.to_string()))?;
-            let response = process_request(&state, chain_id, &request).await?;
-            Ok(Json(response).into_response())
+            let (response, attestation) = process_request(&state, chain_id, &request).await?;
+            let mut resp = Json(response).into_response();
+            if let Some(att) = attestation {
+                if let Ok(val) = att.parse() {
+                    resp.headers_mut().insert("x-drpc-attestation", val);
+                }
+            }
+            Ok(resp)
         }
         _ => Err(GatewayError::InvalidRequest(
             "expected JSON object or array".to_string(),
@@ -197,7 +203,7 @@ async fn process_request(
     state: &AppState,
     chain_id: u64,
     request: &JsonRpcRequest,
-) -> Result<JsonRpcResponse, GatewayError> {
+) -> Result<(JsonRpcResponse, Option<String>), GatewayError> {
     request.validate()?;
 
     // Load registry snapshot and select candidates — guard dropped before any await.
@@ -235,7 +241,7 @@ async fn process_request(
 
     let start = Instant::now();
 
-    let (response, winner) = if requires_quorum(&request.method) {
+    let (response, attestation, winner) = if requires_quorum(&request.method) {
         dispatch_quorum(state, chain_id, request, &candidates, receipt_value).await?
     } else {
         dispatch_concurrent(state, chain_id, request, &candidates, receipt_value).await?
@@ -253,7 +259,7 @@ async fn process_request(
         "served"
     );
 
-    Ok(response)
+    Ok((response, attestation))
 }
 
 // ---------------------------------------------------------------------------
@@ -266,8 +272,8 @@ async fn dispatch_concurrent(
     request: &JsonRpcRequest,
     candidates: &[Arc<Provider>],
     receipt_value: u128,
-) -> Result<(JsonRpcResponse, Arc<Provider>), GatewayError> {
-    let mut set: JoinSet<Result<(JsonRpcResponse, Arc<Provider>), String>> = JoinSet::new();
+) -> Result<(JsonRpcResponse, Option<String>, Arc<Provider>), GatewayError> {
+    let mut set: JoinSet<Result<(JsonRpcResponse, Option<String>, Arc<Provider>), String>> = JoinSet::new();
 
     for provider in candidates {
         let client = state.http_client.clone();
@@ -309,21 +315,27 @@ async fn dispatch_concurrent(
                 return Err(format!("HTTP {}", resp.status()));
             }
 
+            let attestation = resp
+                .headers()
+                .get("x-drpc-attestation")
+                .and_then(|v| v.to_str().ok())
+                .map(|s| s.to_string());
+
             let body = resp
                 .json::<JsonRpcResponse>()
                 .await
                 .map_err(|e| format!("invalid response: {e}"))?;
 
             p.qos.record_success(ms);
-            Ok((body, p))
+            Ok((body, attestation, p))
         });
     }
 
     while let Some(join_result) = set.join_next().await {
         match join_result {
-            Ok(Ok((response, provider))) => {
+            Ok(Ok((response, attestation, provider))) => {
                 set.abort_all();
-                return Ok((response, provider));
+                return Ok((response, attestation, provider));
             }
             Ok(Err(e)) => tracing::debug!(error = %e, "provider attempt failed"),
             Err(e) => tracing::debug!(error = %e, "task panicked"),
@@ -339,6 +351,7 @@ async fn dispatch_concurrent(
 
 struct ProviderOutcome {
     response: JsonRpcResponse,
+    attestation: Option<String>,
     provider: Arc<Provider>,
     latency_ms: u64,
 }
@@ -349,7 +362,7 @@ async fn dispatch_quorum(
     request: &JsonRpcRequest,
     candidates: &[Arc<Provider>],
     receipt_value: u128,
-) -> Result<(JsonRpcResponse, Arc<Provider>), GatewayError> {
+) -> Result<(JsonRpcResponse, Option<String>, Arc<Provider>), GatewayError> {
     let mut set: JoinSet<Result<ProviderOutcome, String>> = JoinSet::new();
 
     for provider in candidates {
@@ -391,12 +404,18 @@ async fn dispatch_quorum(
                 return Err(format!("HTTP {}", resp.status()));
             }
 
+            let attestation = resp
+                .headers()
+                .get("x-drpc-attestation")
+                .and_then(|v| v.to_str().ok())
+                .map(|s| s.to_string());
+
             let response = resp
                 .json::<JsonRpcResponse>()
                 .await
                 .map_err(|e| format!("invalid response: {e}"))?;
 
-            Ok(ProviderOutcome { response, provider: p, latency_ms })
+            Ok(ProviderOutcome { response, attestation, provider: p, latency_ms })
         });
     }
 
@@ -443,7 +462,7 @@ async fn dispatch_quorum(
     }
 
     let winner = outcomes.swap_remove(winner_idx);
-    Ok((winner.response, winner.provider))
+    Ok((winner.response, winner.attestation, winner.provider))
 }
 
 fn majority_index(outcomes: &[ProviderOutcome]) -> usize {

@@ -54,6 +54,8 @@ url = "postgres://dispatch:dispatch@localhost/dispatch"
 "42161" = "http://localhost:8546"   # Arbitrum One
 ```
 
+TAP aggregation and on-chain `collect()` are built into `dispatch-service` — no separate TAP agent binary is needed. The service aggregates receipts into RAVs every 60s and calls `RPCDataService.collect()` every hour automatically.
+
 Start the service:
 
 ```bash
@@ -91,14 +93,6 @@ await agent.reconcile();
 The agent calls `register()`, `startService()`, and `stopService()` as needed. It handles graceful shutdown on SIGTERM/SIGINT, stopping all active registrations before exit.
 
 ---
-
-## 4. Run the TAP agent
-
-`indexer-tap-agent` is a generic Rust binary from The Graph's `indexer-rs` repo. It reads from the `tap_receipts` table in PostgreSQL, aggregates receipts into RAVs, and submits them to the gateway's `/rav/aggregate` endpoint.
-
-Point it at the same PostgreSQL instance as `dispatch-service` and configure:
-- `data_service_address`: `0x73846272813065c3e4efdb3fb82e0d128c8c2364`
-- `tap_aggregator_url`: the gateway's aggregator endpoint
 
 ---
 

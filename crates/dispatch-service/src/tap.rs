@@ -127,7 +127,7 @@ pub fn validate_receipt(
     let signer = recover_signer(msg_hash, &signed.signature)
         .map_err(|e| ServiceError::InvalidReceipt(format!("signature recovery failed: {e}")))?;
 
-    if !authorized_senders.contains(&signer) {
+    if !authorized_senders.is_empty() && !authorized_senders.contains(&signer) {
         return Err(ServiceError::UnauthorizedSender(signer.to_string()));
     }
 

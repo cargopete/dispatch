@@ -32,8 +32,8 @@ Receipts accumulate off-chain and settle on-chain in batches via GraphTally (TAP
 
 ```
 receipts (per request)
-  → TAP agent aggregates into RAV
-  → RPCDataService.collect()
+  → dispatch-service aggregates into RAV (every 60s)
+  → RPCDataService.collect() (every hour)
   → GraphTallyCollector
   → PaymentsEscrow
   → GraphPayments

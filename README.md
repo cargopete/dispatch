@@ -17,7 +17,7 @@ Inspired by the [Q3 2026 "Experimental JSON-RPC Data Service"](https://thegraph.
 |---|---|
 | `RPCDataService` contract | ✅ Live on Arbitrum One |
 | Subgraph | ✅ Live on The Graph Studio |
-| npm packages | ✅ Published (`/consumer-sdk`, `/indexer-agent`) |
+| npm packages | ✅ Published (`@lodestar-dispatch/consumer-sdk`, `@lodestar-dispatch/indexer-agent`) |
 | Active providers | ✅ **1** — `https://rpc.cargopete.com` (Arbitrum One, Standard + Archive) |
 | Receipt signing & validation | ✅ Working — every request carries a signed EIP-712 TAP receipt |
 | Receipt persistence | ✅ Working — stored in `tap_receipts` table in postgres |
@@ -32,15 +32,17 @@ The full payment loop is working end-to-end on the live provider. Requests gener
 
 ```
 dispatch-smoke
-  endpoint   : http://rpc.cargopete.com
+  endpoint   : http://167.235.29.213:7700
   chain_id   : 42161
+  data_svc   : 0x73846272813065c3e4Efdb3Fb82E0d128c8C2364
+  signer     : 0x7D14ae5f20cc2f6421317386Aa8E79e8728353d9
 
   [PASS] GET /health → 200 OK
-  [PASS] eth_blockNumber — returns current block → "0x1b01312d" [196ms]
-  [PASS] eth_chainId — returns 0x61a9 (42161) → "0xa4b1" [73ms]
-  [PASS] eth_getBalance — returns balance at latest block (Standard) → "0x6f3a59e597c5342" [94ms]
-  [PASS] eth_getBalance — historical block (Archive) → "0x0" [649ms]
-  [PASS] eth_getLogs — recent block range (Tier 2 quorum) → [...] [83ms]
+  [PASS] eth_blockNumber — returns current block → "0x1b1623cf" [95ms]
+  [PASS] eth_chainId — returns 0x61a9 (42161) → "0xa4b1" [58ms]
+  [PASS] eth_getBalance — returns balance at latest block (Standard) → "0x6f3a59e597c5342" [74ms]
+  [PASS] eth_getBalance — historical block (Archive) → "0x0" [629ms]
+  [PASS] eth_getLogs — recent block range (Tier 2 quorum) → [{"address":"0xa62d...}] [61ms]
 
   5 passed, 0 failed
 ```
@@ -76,7 +78,7 @@ dispatch-oracle           ← Block header oracle: polls L1 every ~12s, submits
 Payment flow (off-chain → on-chain):
 
 ```
-receipts (per request) → TAP agent aggregates → RAV → RPCDataService.collect()
+receipts (per request) → dispatch-service aggregates (60s) → RAV → RPCDataService.collect() (hourly)
                                                          → GraphTallyCollector
                                                          → PaymentsEscrow
                                                          → GraphPayments
@@ -132,7 +134,7 @@ Key responsibilities:
 - Validate incoming TAP receipts (EIP-712 signature recovery, sender authorisation, staleness check)
 - Forward JSON-RPC requests to the backend Ethereum client
 - Sign responses with an attestation hash (`keccak256(chainId || method || params || response || blockHash)`)
-- Persist receipts to PostgreSQL for the TAP agent
+- Persist receipts to PostgreSQL; background task aggregates into RAVs every 60s and calls `collect()` hourly
 - WebSocket proxy for `eth_subscribe` / `eth_unsubscribe`
 
 Routes: `POST /rpc/{chain_id}` · `GET /ws/{chain_id}` · `GET /health` · `GET /version` · `GET /chains`
@@ -249,21 +251,17 @@ Subgraph: `https://api.studio.thegraph.com/query/1747796/rpc-network/v0.1.1`
 
 ### Smoke test a live provider
 
-Fires real TAP-signed JSON-RPC requests at a running provider and validates responses.
+Fires real TAP-signed JSON-RPC requests directly at a provider, validates responses, and confirms attestation headers are present.
 
 ```bash
-# Test the public provider (default)
-cargo run --bin dispatch-smoke
-
-# Test your own provider
-DISPATCH_ENDPOINT=http://localhost:8080 cargo run --bin dispatch-smoke
-
-# Full validated test with a registered provider key
-DISPATCH_ENDPOINT=https://rpc.my-indexer.com \
-DISPATCH_SIGNER_KEY=0x... \
-DISPATCH_PROVIDER_ADDRESS=0x... \
+# Full validated run against the live provider
+DISPATCH_ENDPOINT=http://167.235.29.213:7700 \
+DISPATCH_SIGNER_KEY=<gateway-signer-key> \
+DISPATCH_PROVIDER_ADDRESS=0xb43B2CCCceadA5292732a8C58ae134AdEFcE09Bb \
 cargo run --bin dispatch-smoke
 ```
+
+`DISPATCH_SIGNER_KEY` must be the private key of an address in the provider's `authorized_senders` list. `DISPATCH_PROVIDER_ADDRESS` must match the provider's registered address — it's embedded in the TAP receipt and validated server-side.
 
 ### Run the demo (quickest path)
 
@@ -333,14 +331,14 @@ forge script script/Deploy.s.sol --rpc-url arbitrum_one --broadcast --verify -vv
 ### Use the Consumer SDK
 
 ```bash
-npm install /consumer-sdk
+npm install @lodestar-dispatch/consumer-sdk
 ```
 
 ```typescript
-import { DISPATCHClient } from "/consumer-sdk";
+import { DISPATCHClient } from "@lodestar-dispatch/consumer-sdk";
 
 const client = new DISPATCHClient({
-  chainId: 1,
+  chainId: 42161,   // Arbitrum One — only live chain currently
   dataServiceAddress: "0x73846272813065c3e4efdb3fb82e0d128c8c2364",
   graphTallyCollector: "0x8f69F5C07477Ac46FBc491B1E6D91E2bb0111A9e",
   subgraphUrl: "https://api.studio.thegraph.com/query/1747796/rpc-network/v0.1.1",
@@ -354,11 +352,11 @@ const block = await client.request("eth_blockNumber", []);
 ### Run the indexer agent
 
 ```bash
-npm install /indexer-agent
+npm install @lodestar-dispatch/indexer-agent
 ```
 
 ```typescript
-import { IndexerAgent } from "/indexer-agent";
+import { IndexerAgent } from "@lodestar-dispatch/indexer-agent";
 
 const agent = new IndexerAgent({
   arbitrumRpcUrl: "https://arb1.arbitrum.io/rpc",

@@ -23,7 +23,7 @@ That's the loop. Everything else — quorum verification, fraud proof slashing, 
 |---|---|
 | `RPCDataService` contract | ✅ Live on Arbitrum One |
 | Subgraph | ✅ Live on The Graph Studio |
-| npm packages | ✅ Published (`@dispatch/consumer-sdk`, `@dispatch/indexer-agent`) |
+| npm packages | ✅ Published (`@lodestar-dispatch/consumer-sdk`, `@lodestar-dispatch/indexer-agent`) |
 | Active providers | ✅ **1** — `https://rpc.cargopete.com` (Arbitrum One, Standard + Archive) |
 | Receipt signing & validation | ✅ Working — every request carries a signed EIP-712 TAP receipt |
 | Receipt persistence | ✅ Working — stored in `tap_receipts` table |

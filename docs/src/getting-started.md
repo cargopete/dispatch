@@ -1,33 +1,51 @@
 # Getting Started
 
-## Smoke test a live provider
+## Hit the live network (quickest)
 
-The fastest way to see the network in action. Fires real TAP-signed JSON-RPC requests at the public provider and validates responses.
+The gateway is live. No setup, no key, no GRT — just a standard JSON-RPC call:
 
 ```bash
-# Test the public provider (default: https://rpc.cargopete.com)
-cargo run --bin dispatch-smoke
+curl -s -X POST http://167.235.29.213:8080/rpc/42161 \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}'
+```
 
-# Test your own provider
-DISPATCH_ENDPOINT=http://localhost:8080 cargo run --bin dispatch-smoke
+Every response carries an `x-drpc-attestation` header — an ECDSA signature from the provider over `keccak256(chainId || method || params || response || blockHash)`. You can verify this with the consumer SDK (see [Using the Network](consumers.md)).
+
+---
+
+## Smoke test a live provider
+
+Fires real TAP-signed JSON-RPC requests directly at a provider endpoint, bypassing the gateway. Validates that receipts are accepted, responses are correct, and attestations are present.
+
+```bash
+# Full validated run against the live provider
+DISPATCH_ENDPOINT=http://167.235.29.213:7700 \
+DISPATCH_SIGNER_KEY=<gateway-signer-key> \
+DISPATCH_PROVIDER_ADDRESS=0xb43B2CCCceadA5292732a8C58ae134AdEFcE09Bb \
+cargo run --bin dispatch-smoke
 ```
 
 Expected output:
 
 ```
 dispatch-smoke
-  endpoint   : https://rpc.cargopete.com
+  endpoint   : http://167.235.29.213:7700
   chain_id   : 42161
+  data_svc   : 0x73846272813065c3e4Efdb3Fb82E0d128c8C2364
+  signer     : 0x7D14ae5f20cc2f6421317386Aa8E79e8728353d9
 
   [PASS] GET /health → 200 OK
-  [PASS] eth_blockNumber — returns current block [196ms]
-  [PASS] eth_chainId — returns 0xa4b1 (42161) [73ms]
-  [PASS] eth_getBalance — balance at latest block (Standard) [94ms]
-  [PASS] eth_getBalance — historical block (Archive) [649ms]
-  [PASS] eth_getLogs — recent block range (Tier 2 quorum) [83ms]
+  [PASS] eth_blockNumber — returns current block → "0x1b1623cf" [95ms]
+  [PASS] eth_chainId — returns 0x61a9 (42161) → "0xa4b1" [58ms]
+  [PASS] eth_getBalance — returns balance at latest block (Standard) → "0x6f3a59e597c5342" [74ms]
+  [PASS] eth_getBalance — historical block (Archive) → "0x0" [629ms]
+  [PASS] eth_getLogs — recent block range (Tier 2 quorum) → [{"address":"0xa62d...] [61ms]
 
   5 passed, 0 failed
 ```
+
+`DISPATCH_SIGNER_KEY` must be the private key of an address in the provider's `authorized_senders` list. `DISPATCH_PROVIDER_ADDRESS` must match the provider's registered address exactly — it is embedded in the TAP receipt and validated on-chain.
 
 ---
 
@@ -61,10 +79,9 @@ The quickest path to a full running stack:
 ```bash
 cp docker/gateway.example.toml docker/gateway.toml
 cp docker/config.example.toml  docker/config.toml
-cp docker/oracle.example.toml  docker/oracle.toml
 
-# Fill in private keys, provider addresses, backend RPC URLs, and L1 RPC URL
+# Fill in private keys, provider addresses, and backend RPC URLs
 docker compose -f docker/docker-compose.yml up
 ```
 
-The stack starts `dispatch-service`, `dispatch-gateway`, `dispatch-oracle`, and PostgreSQL.
+The default stack starts `dispatch-service`, `dispatch-gateway`, and PostgreSQL. The oracle (`dispatch-oracle`) is optional — it is only needed for Tier 1 Merkle proof slashing.

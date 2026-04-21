@@ -1,22 +1,93 @@
 # Using the Network
 
-Two ways to consume the Dispatch network: the consumer SDK (trustless, signs receipts locally) or the gateway (managed, handles everything centrally).
+Two ways to consume the Dispatch network: hit the gateway directly (zero setup) or use the consumer SDK (trustless, signs receipts locally).
+
+---
+
+## Via the Gateway
+
+The gateway handles provider selection, TAP receipt signing, and quorum consensus. It exposes a standard JSON-RPC interface — point any Ethereum library at it.
+
+**Live gateway:** `http://167.235.29.213:8080`
+
+```bash
+# curl
+curl -s -X POST http://167.235.29.213:8080/rpc/42161 \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}'
+
+# Check the attestation header
+curl -si -X POST http://167.235.29.213:8080/rpc/42161 \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' \
+  | grep -E "x-drpc-attestation|result"
+```
+
+With ethers.js or viem, just swap in the gateway URL:
+
+```typescript
+import { createPublicClient, http } from "viem";
+import { arbitrum } from "viem/chains";
+
+const client = createPublicClient({
+  chain: arbitrum,
+  transport: http("http://167.235.29.213:8080/rpc/42161"),
+});
+
+const block = await client.getBlockNumber();
+```
+
+**Routes:**
+```
+POST /rpc/{chain_id}     # chain ID in path
+POST /rpc                # chain ID via X-Chain-Id header
+```
+
+Currently live: **Arbitrum One (42161)** — Standard and Archive tiers.
+
+---
+
+## Verifying attestations
+
+Every response from the gateway includes an `x-drpc-attestation` header — an ECDSA signature by the provider over:
+
+```
+keccak256(chainId || method || keccak256(params) || keccak256(response) || blockNumber || blockHash)
+```
+
+You can verify it with the consumer SDK:
+
+```typescript
+import { computeAttestationHash, recoverAttestationSigner } from "@lodestar-dispatch/consumer-sdk";
+
+const hash = computeAttestationHash({
+  chainId: 42161,
+  method: "eth_getBalance",
+  params: ["0x...", "latest"],
+  response: "0x6f3a59e597c5342",
+  blockNumber: 453000000n,
+  blockHash: "0x...",
+});
+
+const providerAddress = recoverAttestationSigner(hash, attestationSignature);
+// verify providerAddress is the registered indexer you expect
+```
 
 ---
 
 ## Consumer SDK
 
-The `@dispatch/consumer-sdk` package is for dApp developers who want direct, trustless access to providers without running a gateway.
+For trustless access — signs receipts locally and talks directly to providers, no gateway in the loop.
 
 ```bash
-npm install @dispatch/consumer-sdk
+npm install @lodestar-dispatch/consumer-sdk
 ```
 
 ```typescript
-import { DISPATCHClient } from "@dispatch/consumer-sdk";
+import { DISPATCHClient } from "@lodestar-dispatch/consumer-sdk";
 
 const client = new DISPATCHClient({
-  chainId: 1,
+  chainId: 42161,                                               // Arbitrum One (only live chain)
   dataServiceAddress: "0x73846272813065c3e4efdb3fb82e0d128c8c2364",
   graphTallyCollector: "0x8f69F5C07477Ac46FBc491B1E6D91E2bb0111A9e",
   subgraphUrl: "https://api.studio.thegraph.com/query/1747796/rpc-network/v0.1.1",
@@ -24,85 +95,67 @@ const client = new DISPATCHClient({
   basePricePerCU: 4_000_000_000_000n,  // GRT wei per compute unit
 });
 
-// Standard JSON-RPC calls
 const blockNumber = await client.request("eth_blockNumber", []);
 const balance = await client.request("eth_getBalance", ["0x...", "latest"]);
 ```
 
-The client handles everything: discovers providers via the subgraph, selects one by QoS score, signs a TAP receipt per request, and updates scores after each response.
+The client discovers providers via the subgraph, selects one by QoS score, signs a TAP receipt per request, and tracks latency with an EMA.
 
 ### Low-level utilities
 
 ```typescript
 import {
-  signReceipt,
-  buildReceipt,
   discoverProviders,
   selectProvider,
+  buildReceipt,
+  signReceipt,
   computeAttestationHash,
   recoverAttestationSigner,
-} from "@dispatch/consumer-sdk";
+} from "@lodestar-dispatch/consumer-sdk";
 
 // Discover active providers for a chain + tier
 const providers = await discoverProviders({
-  subgraphUrl: "...",
+  subgraphUrl: "https://api.studio.thegraph.com/query/1747796/rpc-network/v0.1.1",
   chainId: 42161,
-  tier: 0,  // Standard
+  tier: 0,  // 0 = Standard, 1 = Archive
 });
 
-// Select one by QoS score (weighted random)
 const provider = selectProvider(providers);
 
-// Build and sign a receipt manually
+// Build and sign a receipt
 const receipt = buildReceipt({
-  dataService: "0x73846272...",
+  dataService: "0x73846272813065c3e4efdb3fb82e0d128c8c2364",
   serviceProvider: provider.address,
   value: 4_000_000_000_000n,
 });
 const signed = await signReceipt(receipt, privateKey);
-
-// Verify a provider's response attestation
-const hash = computeAttestationHash({
-  chainId: 42161,
-  method: "eth_getBalance",
-  params: ["0x...", "latest"],
-  response: "0x...",
-  blockNumber: 12345678n,
-  blockHash: "0x...",
-});
-const signer = recoverAttestationSigner(hash, attestationSignature);
 ```
-
----
-
-## Via the Gateway
-
-The gateway signs receipts on your behalf and handles provider selection. It exposes a standard JSON-RPC interface.
-
-```bash
-# Single chain via path
-POST http://gateway-host:8080/rpc/1          # Ethereum mainnet
-POST http://gateway-host:8080/rpc/42161      # Arbitrum One
-
-# Chain selection via header
-POST http://gateway-host:8080/rpc
-X-Chain-Id: 42161
-```
-
-You can point any standard Ethereum library (ethers.js, viem, web3.py) at the gateway URL with no other changes.
 
 ---
 
 ## Funding the escrow
 
-Before any GRT flows to providers, a consumer needs to deposit into `PaymentsEscrow` on Arbitrum One:
+Before GRT flows to providers you need to deposit into `PaymentsEscrow` on Arbitrum One. This is only required for the consumer SDK (direct provider access) — the gateway manages its own escrow.
 
 ```solidity
 // 1. Approve the escrow contract
-GRT.approve(PaymentsEscrow, amount);
+GRT.approve(0xf6Fcc27aAf1fcD8B254498c9794451d82afC673E, amount);
 
-// 2. Deposit for a specific provider
-PaymentsEscrow.deposit(providerAddress, amount);
+// 2. Deposit — keyed by (payer=you, collector=GraphTallyCollector, receiver=provider)
+PaymentsEscrow.deposit(
+    0x8f69F5C07477Ac46FBc491B1E6D91E2bb0111A9e,  // collector: GraphTallyCollector
+    providerAddress,                                // receiver: the indexer you're paying
+    amount
+);
 ```
 
-The gateway signer address is what you deposit for. The TAP agent then draws down automatically on each `collect()` cycle.
+Deposits are keyed by `(payer, collector, receiver)`. `dispatch-service` draws down automatically on each `collect()` cycle (hourly by default). Check your balance with:
+
+```bash
+cast call 0xf6Fcc27aAf1fcD8B254498c9794451d82afC673E \
+  "getBalance(address,address,address)(uint256)" \
+  <YOUR_ADDRESS> \
+  0x8f69F5C07477Ac46FBc491B1E6D91E2bb0111A9e \
+  <PROVIDER_ADDRESS> \
+  --rpc-url https://arb1.arbitrum.io/rpc
+```
