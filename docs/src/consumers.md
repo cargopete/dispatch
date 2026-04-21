@@ -6,7 +6,7 @@ Two ways to consume the Dispatch network: hit the gateway directly (zero setup) 
 
 ## Via the Gateway
 
-The gateway handles provider selection, TAP receipt signing, and quorum consensus. It exposes a standard JSON-RPC interface — point any Ethereum library at it.
+The gateway handles provider selection and TAP receipt signing. It exposes a standard JSON-RPC interface — point any Ethereum library at it.
 
 **Live gateway:** `http://167.235.29.213:8080`
 
@@ -47,34 +47,6 @@ Currently live: **Arbitrum One (42161)** — Standard and Archive tiers.
 
 ---
 
-## Verifying attestations
-
-Every response from the gateway includes an `x-drpc-attestation` header — an ECDSA signature by the provider over:
-
-```
-keccak256(chainId || method || keccak256(params) || keccak256(response) || blockNumber || blockHash)
-```
-
-You can verify it with the consumer SDK:
-
-```typescript
-import { computeAttestationHash, recoverAttestationSigner } from "@lodestar-dispatch/consumer-sdk";
-
-const hash = computeAttestationHash({
-  chainId: 42161,
-  method: "eth_getBalance",
-  params: ["0x...", "latest"],
-  response: "0x6f3a59e597c5342",
-  blockNumber: 453000000n,
-  blockHash: "0x...",
-});
-
-const providerAddress = recoverAttestationSigner(hash, attestationSignature);
-// verify providerAddress is the registered indexer you expect
-```
-
----
-
 ## Consumer SDK
 
 For trustless access — signs receipts locally and talks directly to providers, no gateway in the loop.
@@ -109,8 +81,6 @@ import {
   selectProvider,
   buildReceipt,
   signReceipt,
-  computeAttestationHash,
-  recoverAttestationSigner,
 } from "@lodestar-dispatch/consumer-sdk";
 
 // Discover active providers for a chain + tier

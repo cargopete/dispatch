@@ -38,7 +38,7 @@ Edit `config.toml`:
 ```toml
 [indexer]
 service_provider_address = "0xYOUR_PROVIDER_ADDRESS"
-operator_private_key      = "0x..."   # signs response attestations
+operator_private_key      = "0x..."   # signs on-chain collect() transactions
 
 [tap]
 data_service_address      = "0x73846272813065c3e4efdb3fb82e0d128c8c2364"

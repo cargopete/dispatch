@@ -2,7 +2,6 @@ import type { CapabilityTier, JsonRpcResponse, Provider } from "./types.js";
 import { discoverProviders } from "./discovery.js";
 import { selectProvider, updateQosScore } from "./selector.js";
 import { buildReceipt, signReceipt, serializeSignedReceipt } from "./tap.js";
-import { computeAttestationHash, recoverAttestationSigner } from "./attestation.js";
 import { computeReceiptValue } from "./cu.js";
 
 export interface ClientConfig {
@@ -127,36 +126,6 @@ export class DISPATCHClient {
     }
 
     return (await httpResponse.json()) as JsonRpcResponse<T>;
-  }
-
-  /**
-   * Verify a provider's attestation signature for a given response.
-   *
-   * Call this after `request()` if you have the block context needed to
-   * reconstruct the attestation hash (blockNumber, blockHash).
-   *
-   * @returns true if the signer matches `expectedSigner`.
-   */
-  async verifyAttestation(
-    method: string,
-    params: unknown[],
-    response: unknown,
-    blockNumber: bigint,
-    blockHash: `0x${string}`,
-    signature: `0x${string}`,
-    expectedSigner: `0x${string}`
-  ): Promise<boolean> {
-    const hash = computeAttestationHash({
-      chainId: this.chainId,
-      method,
-      params,
-      response,
-      blockNumber,
-      blockHash,
-    });
-
-    const signer = await recoverAttestationSigner(hash, signature);
-    return signer.toLowerCase() === expectedSigner.toLowerCase();
   }
 
   private async refreshProviders(): Promise<void> {

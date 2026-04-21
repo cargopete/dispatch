@@ -39,15 +39,6 @@ export interface SignedTapReceipt {
   signature: `0x${string}`;
 }
 
-export interface AttestationPayload {
-  chainId: number;
-  method: string;
-  params: unknown;
-  response: unknown;
-  blockNumber: bigint;
-  blockHash: `0x${string}`;
-}
-
 export interface JsonRpcRequest {
   jsonrpc: "2.0";
   method: string;
