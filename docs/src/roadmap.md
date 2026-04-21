@@ -6,7 +6,7 @@ Aligns with The Graph's 2026 Technical Roadmap ("Experimental JSON-RPC Data Serv
 
 ## Phase 1 — MVP ✅
 
-- `RPCDataService.sol` — register, startService, stopService, collect, slash
+- `RPCDataService.sol` — register, startService, stopService, collect
 - `paymentsDestination` — decouple payment recipient from operator key
 - `dispatch-service` — JSON-RPC proxy with TAP receipt validation
 - `dispatch-gateway` — QoS routing, TAP receipt signing, metrics
@@ -33,8 +33,6 @@ Aligns with The Graph's 2026 Technical Roadmap ("Experimental JSON-RPC Data Serv
 ## Phase 3 — Full Feature Parity ✅
 
 - WebSocket subscriptions (`eth_subscribe` / `eth_unsubscribe`)
-- Tier 1 fraud proof slashing (`StateProofVerifier.sol`)
-- `dispatch-oracle` — block header trust service
 - Archive tier routing (hex block numbers, `"earliest"`)
 - `debug_*` / `trace_*` routing per chain capability
 

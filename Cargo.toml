@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/dispatch-service", "crates/dispatch-tap", "crates/dispatch-gateway", "crates/dispatch-oracle", "crates/dispatch-smoke"]
+members = ["crates/dispatch-service", "crates/dispatch-tap", "crates/dispatch-gateway", "crates/dispatch-smoke"]
 resolver = "2"
 
 [workspace.package]

@@ -12,7 +12,7 @@ use serde_json::Value;
 use crate::{
     db,
     error::ServiceError,
-    rpc::{proxy, types::JsonRpcRequest, verify::{extract_block_context, tier_for_method}},
+    rpc::{proxy, types::JsonRpcRequest, verify::extract_block_context},
     server::AppState,
     tap,
 };
@@ -59,8 +59,7 @@ async fn rpc_handler(
         now_ns,
     )?;
 
-    let tier = tier_for_method(&request.method);
-    tracing::debug!(method = %request.method, chain_id, tier = ?tier, "dispatching");
+    tracing::debug!(method = %request.method, chain_id, "dispatching");
 
     // --- Forward to backend Ethereum client ---
     let response = proxy::forward(&state.http_client, &backend_url, &request).await?;
