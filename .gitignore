@@ -8,3 +8,4 @@ agent.config.json
 *.env
 .env
 docs/book
+contracts/script/TestCollect.s.sol
