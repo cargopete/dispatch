@@ -49,17 +49,14 @@ async fn probe_all(state: &AppState) {
             let provider = provider.clone();
 
             tokio::spawn(async move {
-                let url = format!("{}/rpc/{}", provider.endpoint, chain_id);
-                let body = json!({
-                    "jsonrpc": "2.0",
-                    "method": "eth_blockNumber",
-                    "params": [],
-                    "id": 1
-                });
+                // Use the unauthenticated /block/{chain_id} endpoint — avoids
+                // needing a signed TAP receipt just to probe for block freshness.
+                let url = format!("{}/block/{}", provider.endpoint, chain_id);
+                let body = json!({});
 
                 let start = Instant::now();
 
-                match client.post(&url).json(&body).send().await {
+                match client.get(&url).send().await {
                     Ok(resp) if resp.status().is_success() => {
                         let ms = start.elapsed().as_millis() as u64;
 
