@@ -100,7 +100,8 @@ export class DISPATCHClient {
     const id = this.requestId++;
     const start = Date.now();
 
-    const httpResponse = await fetch(service.endpoint, {
+    const url = `${service.endpoint.replace(/\/$/, "")}/rpc/${this.chainId}`;
+    const httpResponse = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

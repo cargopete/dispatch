@@ -187,6 +187,15 @@ process.on("SIGTERM", shutdown);
 
 // ─── Start ─────────────────────────────────────────────────────────────────────
 
+server.on("error", (err: NodeJS.ErrnoException) => {
+  if (err.code === "EADDRINUSE") {
+    console.error(`Error: port ${PORT} is already in use. Set DISPATCH_PORT=<other> to pick a different one.`);
+  } else {
+    console.error(`Server error: ${err.message}`);
+  }
+  process.exit(1);
+});
+
 server.listen(PORT, () => {
   console.log("\x1b[90m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\x1b[0m");
   console.log(`\x1b[1mdispatch-proxy\x1b[0m v0.1.0`);
