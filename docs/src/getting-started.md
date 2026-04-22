@@ -49,6 +49,22 @@ dispatch-smoke
 
 ---
 
+## Run the drop-in proxy
+
+Point MetaMask, Viem, or any Ethereum library at the Dispatch network without changing application code. The proxy runs locally and handles everything — key management, provider discovery, receipt signing.
+
+```bash
+cd proxy
+npm install
+npm start
+```
+
+On first run it generates a consumer keypair, prints your consumer address, and links to the funding dashboard. Fund the escrow at [lodestar-dashboard.com/dispatch](https://lodestar-dashboard.com/dispatch), then add `http://localhost:8545` to MetaMask as a custom network.
+
+See [Using the Network → dispatch-proxy](consumers.md#dispatch-proxy-drop-in-local-server) for full configuration options.
+
+---
+
 ## Run the local demo
 
 Runs a complete local stack on Anvil — Horizon contracts, dispatch-service, dispatch-gateway — makes 5 RPC requests, submits a RAV, and proves GRT lands in the payment wallet. The full loop in one command.

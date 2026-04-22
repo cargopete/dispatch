@@ -37,6 +37,16 @@ aggregator_url            = "http://dispatch-gateway:8080"
 # How often to aggregate receipts into RAVs (default: 60s).
 # aggregation_interval_secs = 60
 
+# Maximum unconfirmed GRT wei per consumer before rejecting requests (default: 0.1 GRT).
+# credit_threshold = 100_000_000_000_000_000
+
+# Arbitrum One RPC for on-chain escrow balance pre-checks (cached 30s per consumer).
+# Falls back to [collector].arbitrum_rpc_url. Omit both to disable escrow checks.
+# escrow_check_rpc_url = "https://arb1.arbitrum.io/rpc"
+
+# PaymentsEscrow contract — defaults to the live Horizon deployment, no need to change.
+# payments_escrow_address = "0xf6Fcc27aAf1fcD8B254498c9794451d82afC673E"
+
 [chains]
 # Chain IDs this node is registered to serve.
 supported = [1, 42161]

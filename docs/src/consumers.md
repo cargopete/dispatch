@@ -54,11 +54,10 @@ The easiest way to point any existing app at the Dispatch network without changi
 ```bash
 cd proxy
 npm install
-export DISPATCH_SIGNER_KEY=0x<your-private-key>
 npm start
 ```
 
-On startup it prints the MetaMask instructions and begins logging every request:
+On first run the proxy auto-generates a consumer keypair, saves it to `./consumer.key`, and tells you where to fund escrow. No key needed upfront.
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -66,6 +65,11 @@ dispatch-proxy v0.1.0
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Chain:     Ethereum Mainnet (1)
 Listening: http://localhost:8545
+Consumer:  0xABCD...1234
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠  New consumer key generated → ./consumer.key
+   Fund the escrow before making requests:
+   https://lodestar-dashboard.com/dispatch
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Add to MetaMask → Settings → Networks → Add a network
   RPC URL:  http://localhost:8545
@@ -80,7 +84,7 @@ Add to MetaMask → Settings → Networks → Add a network
 
 | Variable | Default | Description |
 |---|---|---|
-| `DISPATCH_SIGNER_KEY` | *required* | Consumer private key for signing TAP receipts |
+| `DISPATCH_SIGNER_KEY` | *(auto-generated)* | Consumer private key. If unset, loaded from `./consumer.key` or generated fresh |
 | `DISPATCH_CHAIN_ID` | `1` | Chain to proxy (1 = Ethereum, 42161 = Arbitrum One, etc.) |
 | `DISPATCH_PORT` | `8545` | Local port to listen on |
 | `DISPATCH_BASE_PRICE_PER_CU` | `4000000000000` | GRT wei per compute unit |
@@ -149,21 +153,35 @@ const signed = await signReceipt(receipt, privateKey);
 
 ## Funding the escrow
 
-Before GRT flows to providers you need to deposit into `PaymentsEscrow` on Arbitrum One. This is only required for the consumer SDK (direct provider access) — the gateway manages its own escrow.
+Before GRT flows to providers you need to deposit into `PaymentsEscrow` on Arbitrum One. This is only required for the proxy and consumer SDK (direct provider access) — the gateway manages its own escrow.
+
+### Via the Lodestar dashboard (easiest)
+
+Go to [lodestar-dashboard.com/dispatch](https://lodestar-dashboard.com/dispatch). Connect MetaMask, paste your consumer address, and deposit GRT. The dashboard calls `depositTo()` on the PaymentsEscrow contract so you can fund any address's escrow directly — the consumer wallet itself needs no ETH or GRT. Useful for funding `dispatch-proxy` from a separate hot wallet.
+
+### Manually (cast / ethers)
 
 ```solidity
 // 1. Approve the escrow contract
 GRT.approve(0xf6Fcc27aAf1fcD8B254498c9794451d82afC673E, amount);
 
-// 2. Deposit — keyed by (payer=you, collector=GraphTallyCollector, receiver=provider)
+// 2a. Deposit from your own address
 PaymentsEscrow.deposit(
     0x8f69F5C07477Ac46FBc491B1E6D91E2bb0111A9e,  // collector: GraphTallyCollector
     providerAddress,                                // receiver: the indexer you're paying
     amount
 );
+
+// 2b. Or fund any address's escrow (useful for the proxy key)
+PaymentsEscrow.depositTo(
+    consumerAddress,                                // payer: the consumer key you're funding
+    0x8f69F5C07477Ac46FBc491B1E6D91E2bb0111A9e,  // collector: GraphTallyCollector
+    providerAddress,                                // receiver
+    amount
+);
 ```
 
-Deposits are keyed by `(payer, collector, receiver)`. `dispatch-service` draws down automatically on each `collect()` cycle (hourly by default). Check your balance with:
+Deposits are keyed by `(payer, collector, receiver)`. `dispatch-service` draws down automatically on each `collect()` cycle (hourly by default). Providers reject requests from addresses with zero escrow balance (checked on-chain every 30 seconds). Check your balance with:
 
 ```bash
 cast call 0xf6Fcc27aAf1fcD8B254498c9794451d82afC673E \

@@ -77,6 +77,14 @@ pub struct TapConfig {
     /// Resets after a successful on-chain collect(). Default: 0.1 GRT.
     #[serde(default = "default_credit_threshold")]
     pub credit_threshold: u128,
+    /// PaymentsEscrow contract address on Arbitrum One.
+    /// Defaults to the live Horizon deployment.
+    #[serde(default = "default_payments_escrow_address")]
+    pub payments_escrow_address: Address,
+    /// Arbitrum One RPC URL used for escrow balance checks.
+    /// Falls back to [collector].arbitrum_rpc_url when omitted.
+    /// Set this (or [collector]) to enable on-chain escrow pre-checks.
+    pub escrow_check_rpc_url: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -122,4 +130,10 @@ fn default_collect_interval_secs() -> u64 {
 }
 fn default_credit_threshold() -> u128 {
     100_000_000_000_000_000 // 0.1 GRT
+}
+fn default_payments_escrow_address() -> Address {
+    // PaymentsEscrow on Arbitrum One (Graph Horizon)
+    "0xf6Fcc27aAf1fcD8B254498c9794451d82afC673E"
+        .parse()
+        .unwrap()
 }

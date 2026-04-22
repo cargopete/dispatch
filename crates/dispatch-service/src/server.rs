@@ -13,6 +13,7 @@ use crate::{
     collector,
     config::Config,
     db,
+    escrow::EscrowChecker,
     routes,
     tap_aggregator,
 };
@@ -33,6 +34,8 @@ pub struct AppState {
     /// Per-consumer accumulated unconfirmed receipt value (GRT wei).
     /// Reset for each consumer after a successful on-chain collect().
     pub consumer_credit: Arc<RwLock<HashMap<Address, u128>>>,
+    /// On-chain escrow balance checker. None if no Arbitrum RPC is configured.
+    pub escrow_checker: Option<Arc<EscrowChecker>>,
 }
 
 pub async fn run(config: Config) -> Result<()> {
@@ -60,6 +63,34 @@ pub async fn run(config: Config) -> Result<()> {
     let consumer_credit: Arc<RwLock<HashMap<Address, u128>>> =
         Arc::new(RwLock::new(HashMap::new()));
 
+    let http_client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(30))
+        .build()?;
+
+    // Build the escrow checker if we have an Arbitrum RPC URL available.
+    let escrow_rpc_url = config
+        .tap
+        .escrow_check_rpc_url
+        .clone()
+        .or_else(|| config.collector.as_ref().map(|c| c.arbitrum_rpc_url.clone()));
+
+    let escrow_checker = escrow_rpc_url.map(|rpc_url| {
+        tracing::info!("escrow balance pre-check enabled");
+        Arc::new(EscrowChecker::new(
+            rpc_url,
+            config.tap.payments_escrow_address,
+            config.tap.eip712_verifying_contract, // GraphTallyCollector = TAP collector
+            config.indexer.service_provider_address,
+            http_client.clone(),
+        ))
+    });
+
+    if escrow_checker.is_none() {
+        tracing::warn!(
+            "no Arbitrum RPC configured — escrow pre-checks disabled (set [tap].escrow_check_rpc_url or [collector].arbitrum_rpc_url)"
+        );
+    }
+
     // Start background tasks if a database is configured.
     if let Some(ref pool) = db_pool {
         tap_aggregator::spawn(Arc::new(config.clone()), pool.clone());
@@ -68,14 +99,13 @@ pub async fn run(config: Config) -> Result<()> {
 
     let state = AppState {
         config: Arc::new(config.clone()),
-        http_client: reqwest::Client::builder()
-            .timeout(std::time::Duration::from_secs(30))
-            .build()?,
+        http_client,
         tap_domain_separator,
         db_pool,
         signing_key: Arc::new(signing_key),
         signer_address,
         consumer_credit,
+        escrow_checker,
     };
 
     let app = routes::router(state).layer(TraceLayer::new_for_http());

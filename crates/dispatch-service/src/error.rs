@@ -32,6 +32,9 @@ pub enum ServiceError {
     #[error("credit limit exceeded — fund escrow at https://lodestar-dashboard.com/dispatch")]
     CreditLimitExceeded,
 
+    #[error("escrow balance is zero — fund escrow at https://lodestar-dashboard.com/dispatch")]
+    InsufficientEscrow,
+
     #[error("internal error: {0}")]
     Internal(#[from] anyhow::Error),
 }
@@ -48,7 +51,7 @@ impl IntoResponse for ServiceError {
             ServiceError::UnsupportedChain(_) => {
                 (StatusCode::NOT_FOUND, -32002, self.to_string())
             }
-            ServiceError::CreditLimitExceeded => {
+            ServiceError::CreditLimitExceeded | ServiceError::InsufficientEscrow => {
                 (StatusCode::PAYMENT_REQUIRED, -32005, self.to_string())
             }
             ServiceError::BackendError(_) | ServiceError::InvalidRequest(_) => {

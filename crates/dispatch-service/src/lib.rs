@@ -3,6 +3,7 @@ pub mod collector;
 pub mod config;
 pub mod db;
 pub mod error;
+pub mod escrow;
 pub mod routes;
 pub mod rpc;
 pub mod server;

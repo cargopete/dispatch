@@ -59,6 +59,24 @@ async fn rpc_handler(
         now_ns,
     )?;
 
+    // --- Escrow balance pre-check (cached 30 s) ---
+    if let Some(checker) = &state.escrow_checker {
+        match checker.balance(validated.signer).await {
+            Ok(0) => {
+                tracing::warn!(
+                    signer = %validated.signer,
+                    "escrow balance is zero — rejecting request"
+                );
+                return Err(ServiceError::InsufficientEscrow);
+            }
+            Ok(bal) => tracing::debug!(signer = %validated.signer, balance = bal, "escrow ok"),
+            Err(e) => {
+                // Don't block the request if the check itself fails — log and continue.
+                tracing::warn!(error = %e, signer = %validated.signer, "escrow check failed, proceeding anyway");
+            }
+        }
+    }
+
     // --- Credit limit check ---
     {
         let credit = state.consumer_credit.read().unwrap();

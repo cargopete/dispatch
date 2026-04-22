@@ -42,6 +42,14 @@ aggregator_url = "http://dispatch-gateway:8080"
 # How often to run RAV aggregation, in seconds (default: 60).
 # aggregation_interval_secs = 60
 
+# Maximum unconfirmed GRT wei per consumer before rejecting (default: 0.1 GRT).
+# credit_threshold = 100_000_000_000_000_000
+
+# Arbitrum One RPC for escrow balance pre-checks (cached 30s per consumer).
+# Falls back to [collector].arbitrum_rpc_url when omitted.
+# Disable both to skip escrow checks (not recommended for production).
+# escrow_check_rpc_url = "https://arb1.arbitrum.io/rpc"
+
 [chains]
 # Chain IDs this node is registered to serve.
 # Must match the chains passed to RPCDataService.startService() on-chain.
