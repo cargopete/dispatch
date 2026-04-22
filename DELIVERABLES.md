@@ -30,7 +30,7 @@
 On-chain contract implementing `IDataService`. Inherits `DataService` + `DataServiceFees` + `DataServicePausable`.
 
 Key responsibilities:
-- `register` — validate provision (≥25,000 GRT/chain, ≥14d thawing), store provider metadata, set `paymentsDestination` (defaults to `serviceProvider`)
+- `register` — validate provision (≥10,000 GRT/chain, ≥14d thawing), store provider metadata, set `paymentsDestination` (defaults to `serviceProvider`)
 - `setPaymentsDestination` — decouple payment recipient from operator key (learnt from SubstreamsDataService; operators may use separate cold-storage wallets)
 - `startService` — register provider for a `(chainId, capabilityTier, endpoint)` tuple
 - `stopService` — deactivate chain registration
@@ -109,7 +109,7 @@ Provider's provisioned stake is shared across all chains they serve (no per-chai
 
 | Parameter | Phase 1 value | Notes |
 |---|---|---|
-| Min provision per chain | 25,000 GRT | Governance-adjustable per chain |
+| Min provision per chain | 10,000 GRT | Governance-adjustable per chain |
 | Thawing period | 14 days | Dispute window: 7–10 days |
 | stakeToFeesRatio | 5 (5:1) | Consistent with SubgraphService |
 | Max slash % | 10% (recommended 2.5%) | Tier 1 fraud proofs only |

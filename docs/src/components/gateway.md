@@ -22,12 +22,12 @@ Sits between consumers and providers. Handles provider discovery, QoS scoring, g
 ## Provider selection
 
 1. Query registry for providers serving the requested `(chain_id, tier)` pair
-2. Score each provider by QoS (latency EMA, availability, block freshness, correctness)
+2. Score each provider by QoS (latency EMA, availability, block freshness)
 3. Apply geographic bonus (15% score boost for same-region providers)
 4. Weighted random selection from top-k candidates
-5. Dispatch concurrently to up to 3 providers; return first valid response
+5. For deterministic methods: quorum dispatch (majority wins). For all others: concurrent dispatch (first valid wins)
 
-**Quorum consensus** is applied for `eth_call` and `eth_getLogs`: responses are cross-referenced across providers. Minority providers receive a QoS penalty.
+**Quorum methods** — `eth_call`, `eth_getLogs`, `eth_getBalance`, `eth_getCode`, `eth_getTransactionCount`, `eth_getStorageAt`, `eth_getBlockByHash`, `eth_getTransactionByHash`, `eth_getTransactionReceipt`. All other methods use concurrent dispatch.
 
 ---
 
@@ -35,10 +35,9 @@ Sits between consumers and providers. Handles provider discovery, QoS scoring, g
 
 | Metric | Weight |
 |---|---|
-| Latency (p50 EMA) | 30% |
-| Availability (rolling 24h) | 30% |
-| Block freshness (blocks behind head) | 25% |
-| Correctness (quorum + spot-check pass rate) | 15% |
+| Latency (p50 EMA) | 35% |
+| Availability | 35% |
+| Block freshness (blocks behind chain head) | 30% |
 
 A synthetic `eth_blockNumber` probe fires to every provider every 10 seconds. Results feed freshness and availability scores.
 

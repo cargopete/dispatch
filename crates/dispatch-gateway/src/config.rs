@@ -85,6 +85,9 @@ pub struct QosConfig {
     /// Number of providers to dispatch to concurrently (first response wins).
     #[serde(default = "default_concurrent_k")]
     pub concurrent_k: usize,
+    /// Number of providers to query for quorum on deterministic methods.
+    #[serde(default = "default_quorum_k")]
+    pub quorum_k: usize,
     /// Score bonus added for providers in the same region as this gateway.
     #[serde(default = "default_region_bonus")]
     pub region_bonus: f64,
@@ -158,6 +161,7 @@ fn default_tap_verifying_contract() -> Address {
 }
 fn default_probe_interval_secs() -> u64 { 10 }
 fn default_concurrent_k() -> usize { 3 }
+fn default_quorum_k() -> usize { 3 }
 fn default_discovery_interval_secs() -> u64 { 60 }
 fn default_rps() -> u32 { 100 }
 fn default_burst() -> u32 { 20 }

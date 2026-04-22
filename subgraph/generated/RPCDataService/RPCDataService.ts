@@ -32,80 +32,6 @@ export class ChainAdded__Params {
   }
 }
 
-export class ChainBondForfeited extends ethereum.Event {
-  get params(): ChainBondForfeited__Params {
-    return new ChainBondForfeited__Params(this);
-  }
-}
-
-export class ChainBondForfeited__Params {
-  _event: ChainBondForfeited;
-
-  constructor(event: ChainBondForfeited) {
-    this._event = event;
-  }
-
-  get chainId(): BigInt {
-    return this._event.parameters[0].value.toBigInt();
-  }
-
-  get bondAmount(): BigInt {
-    return this._event.parameters[1].value.toBigInt();
-  }
-}
-
-export class ChainBondReleased extends ethereum.Event {
-  get params(): ChainBondReleased__Params {
-    return new ChainBondReleased__Params(this);
-  }
-}
-
-export class ChainBondReleased__Params {
-  _event: ChainBondReleased;
-
-  constructor(event: ChainBondReleased) {
-    this._event = event;
-  }
-
-  get chainId(): BigInt {
-    return this._event.parameters[0].value.toBigInt();
-  }
-
-  get proposer(): Address {
-    return this._event.parameters[1].value.toAddress();
-  }
-
-  get bondAmount(): BigInt {
-    return this._event.parameters[2].value.toBigInt();
-  }
-}
-
-export class ChainProposed extends ethereum.Event {
-  get params(): ChainProposed__Params {
-    return new ChainProposed__Params(this);
-  }
-}
-
-export class ChainProposed__Params {
-  _event: ChainProposed;
-
-  constructor(event: ChainProposed) {
-    this._event = event;
-  }
-
-  get chainId(): BigInt {
-    return this._event.parameters[0].value.toBigInt();
-  }
-
-  get proposer(): Address {
-    return this._event.parameters[1].value.toAddress();
-  }
-
-  get bondAmount(): BigInt {
-    return this._event.parameters[2].value.toBigInt();
-  }
-}
-
 export class ChainRemoved extends ethereum.Event {
   get params(): ChainRemoved__Params {
     return new ChainRemoved__Params(this);
@@ -139,32 +65,6 @@ export class DelegationRatioSet__Params {
 
   get ratio(): BigInt {
     return this._event.parameters[0].value.toBigInt();
-  }
-}
-
-export class FraudProofSubmitted extends ethereum.Event {
-  get params(): FraudProofSubmitted__Params {
-    return new FraudProofSubmitted__Params(this);
-  }
-}
-
-export class FraudProofSubmitted__Params {
-  _event: FraudProofSubmitted;
-
-  constructor(event: FraudProofSubmitted) {
-    this._event = event;
-  }
-
-  get provider(): Address {
-    return this._event.parameters[0].value.toAddress();
-  }
-
-  get challenger(): Address {
-    return this._event.parameters[1].value.toAddress();
-  }
-
-  get slashAmount(): BigInt {
-    return this._event.parameters[2].value.toBigInt();
   }
 }
 
@@ -236,24 +136,6 @@ export class Initialized__Params {
   }
 
   get version(): BigInt {
-    return this._event.parameters[0].value.toBigInt();
-  }
-}
-
-export class IssuanceRateSet extends ethereum.Event {
-  get params(): IssuanceRateSet__Params {
-    return new IssuanceRateSet__Params(this);
-  }
-}
-
-export class IssuanceRateSet__Params {
-  _event: IssuanceRateSet;
-
-  constructor(event: IssuanceRateSet) {
-    this._event = event;
-  }
-
-  get issuancePerCU(): BigInt {
     return this._event.parameters[0].value.toBigInt();
   }
 }
@@ -441,86 +323,6 @@ export class ProvisionTokensRangeSet__Params {
 
   get max(): BigInt {
     return this._event.parameters[1].value.toBigInt();
-  }
-}
-
-export class RewardsAccrued extends ethereum.Event {
-  get params(): RewardsAccrued__Params {
-    return new RewardsAccrued__Params(this);
-  }
-}
-
-export class RewardsAccrued__Params {
-  _event: RewardsAccrued;
-
-  constructor(event: RewardsAccrued) {
-    this._event = event;
-  }
-
-  get recipient(): Address {
-    return this._event.parameters[0].value.toAddress();
-  }
-
-  get amount(): BigInt {
-    return this._event.parameters[1].value.toBigInt();
-  }
-}
-
-export class RewardsClaimed extends ethereum.Event {
-  get params(): RewardsClaimed__Params {
-    return new RewardsClaimed__Params(this);
-  }
-}
-
-export class RewardsClaimed__Params {
-  _event: RewardsClaimed;
-
-  constructor(event: RewardsClaimed) {
-    this._event = event;
-  }
-
-  get recipient(): Address {
-    return this._event.parameters[0].value.toAddress();
-  }
-
-  get amount(): BigInt {
-    return this._event.parameters[1].value.toBigInt();
-  }
-}
-
-export class RewardsDeposited extends ethereum.Event {
-  get params(): RewardsDeposited__Params {
-    return new RewardsDeposited__Params(this);
-  }
-}
-
-export class RewardsDeposited__Params {
-  _event: RewardsDeposited;
-
-  constructor(event: RewardsDeposited) {
-    this._event = event;
-  }
-
-  get amount(): BigInt {
-    return this._event.parameters[0].value.toBigInt();
-  }
-}
-
-export class RewardsWithdrawn extends ethereum.Event {
-  get params(): RewardsWithdrawn__Params {
-    return new RewardsWithdrawn__Params(this);
-  }
-}
-
-export class RewardsWithdrawn__Params {
-  _event: RewardsWithdrawn;
-
-  constructor(event: RewardsWithdrawn) {
-    this._event = event;
-  }
-
-  get amount(): BigInt {
-    return this._event.parameters[0].value.toBigInt();
   }
 }
 
@@ -802,28 +604,6 @@ export class ThawingPeriodRangeSet__Params {
   }
 }
 
-export class TrustedStateRootSet extends ethereum.Event {
-  get params(): TrustedStateRootSet__Params {
-    return new TrustedStateRootSet__Params(this);
-  }
-}
-
-export class TrustedStateRootSet__Params {
-  _event: TrustedStateRootSet;
-
-  constructor(event: TrustedStateRootSet) {
-    this._event = event;
-  }
-
-  get blockHash(): Bytes {
-    return this._event.parameters[0].value.toBytes();
-  }
-
-  get stateRoot(): Bytes {
-    return this._event.parameters[1].value.toBytes();
-  }
-}
-
 export class Unpaused extends ethereum.Event {
   get params(): Unpaused__Params {
     return new Unpaused__Params(this);
@@ -1035,38 +815,6 @@ export class RPCDataService__getVerifierCutRangeResult {
   }
 }
 
-export class RPCDataService__pendingChainBondsResult {
-  value0: Address;
-  value1: BigInt;
-  value2: BigInt;
-
-  constructor(value0: Address, value1: BigInt, value2: BigInt) {
-    this.value0 = value0;
-    this.value1 = value1;
-    this.value2 = value2;
-  }
-
-  toMap(): TypedMap<string, ethereum.Value> {
-    let map = new TypedMap<string, ethereum.Value>();
-    map.set("value0", ethereum.Value.fromAddress(this.value0));
-    map.set("value1", ethereum.Value.fromUnsignedBigInt(this.value1));
-    map.set("value2", ethereum.Value.fromUnsignedBigInt(this.value2));
-    return map;
-  }
-
-  getProposer(): Address {
-    return this.value0;
-  }
-
-  getAmount(): BigInt {
-    return this.value1;
-  }
-
-  getProposedAt(): BigInt {
-    return this.value2;
-  }
-}
-
 export class RPCDataService__supportedChainsResult {
   value0: boolean;
   value1: BigInt;
@@ -1095,52 +843,6 @@ export class RPCDataService__supportedChainsResult {
 export class RPCDataService extends ethereum.SmartContract {
   static bind(address: Address): RPCDataService {
     return new RPCDataService("RPCDataService", address);
-  }
-
-  CHAIN_BOND_AMOUNT(): BigInt {
-    let result = super.call(
-      "CHAIN_BOND_AMOUNT",
-      "CHAIN_BOND_AMOUNT():(uint256)",
-      [],
-    );
-
-    return result[0].toBigInt();
-  }
-
-  try_CHAIN_BOND_AMOUNT(): ethereum.CallResult<BigInt> {
-    let result = super.tryCall(
-      "CHAIN_BOND_AMOUNT",
-      "CHAIN_BOND_AMOUNT():(uint256)",
-      [],
-    );
-    if (result.reverted) {
-      return new ethereum.CallResult();
-    }
-    let value = result.value;
-    return ethereum.CallResult.fromValue(value[0].toBigInt());
-  }
-
-  CHALLENGER_REWARD_PPM(): BigInt {
-    let result = super.call(
-      "CHALLENGER_REWARD_PPM",
-      "CHALLENGER_REWARD_PPM():(uint256)",
-      [],
-    );
-
-    return result[0].toBigInt();
-  }
-
-  try_CHALLENGER_REWARD_PPM(): ethereum.CallResult<BigInt> {
-    let result = super.tryCall(
-      "CHALLENGER_REWARD_PPM",
-      "CHALLENGER_REWARD_PPM():(uint256)",
-      [],
-    );
-    if (result.reverted) {
-      return new ethereum.CallResult();
-    }
-    let value = result.value;
-    return ethereum.CallResult.fromValue(value[0].toBigInt());
   }
 
   DEFAULT_MIN_PROVISION(): BigInt {
@@ -1182,21 +884,6 @@ export class RPCDataService extends ethereum.SmartContract {
       "MIN_THAWING_PERIOD():(uint64)",
       [],
     );
-    if (result.reverted) {
-      return new ethereum.CallResult();
-    }
-    let value = result.value;
-    return ethereum.CallResult.fromValue(value[0].toBigInt());
-  }
-
-  SLASH_AMOUNT(): BigInt {
-    let result = super.call("SLASH_AMOUNT", "SLASH_AMOUNT():(uint256)", []);
-
-    return result[0].toBigInt();
-  }
-
-  try_SLASH_AMOUNT(): ethereum.CallResult<BigInt> {
-    let result = super.tryCall("SLASH_AMOUNT", "SLASH_AMOUNT():(uint256)", []);
     if (result.reverted) {
       return new ethereum.CallResult();
     }
@@ -1550,25 +1237,6 @@ export class RPCDataService extends ethereum.SmartContract {
     return ethereum.CallResult.fromValue(value[0].toBoolean());
   }
 
-  issuancePerCU(): BigInt {
-    let result = super.call("issuancePerCU", "issuancePerCU():(uint256)", []);
-
-    return result[0].toBigInt();
-  }
-
-  try_issuancePerCU(): ethereum.CallResult<BigInt> {
-    let result = super.tryCall(
-      "issuancePerCU",
-      "issuancePerCU():(uint256)",
-      [],
-    );
-    if (result.reverted) {
-      return new ethereum.CallResult();
-    }
-    let value = result.value;
-    return ethereum.CallResult.fromValue(value[0].toBigInt());
-  }
-
   minThawingPeriod(): BigInt {
     let result = super.call(
       "minThawingPeriod",
@@ -1668,64 +1336,6 @@ export class RPCDataService extends ethereum.SmartContract {
     return ethereum.CallResult.fromValue(value[0].toAddress());
   }
 
-  pendingChainBonds(param0: BigInt): RPCDataService__pendingChainBondsResult {
-    let result = super.call(
-      "pendingChainBonds",
-      "pendingChainBonds(uint256):(address,uint256,uint256)",
-      [ethereum.Value.fromUnsignedBigInt(param0)],
-    );
-
-    return new RPCDataService__pendingChainBondsResult(
-      result[0].toAddress(),
-      result[1].toBigInt(),
-      result[2].toBigInt(),
-    );
-  }
-
-  try_pendingChainBonds(
-    param0: BigInt,
-  ): ethereum.CallResult<RPCDataService__pendingChainBondsResult> {
-    let result = super.tryCall(
-      "pendingChainBonds",
-      "pendingChainBonds(uint256):(address,uint256,uint256)",
-      [ethereum.Value.fromUnsignedBigInt(param0)],
-    );
-    if (result.reverted) {
-      return new ethereum.CallResult();
-    }
-    let value = result.value;
-    return ethereum.CallResult.fromValue(
-      new RPCDataService__pendingChainBondsResult(
-        value[0].toAddress(),
-        value[1].toBigInt(),
-        value[2].toBigInt(),
-      ),
-    );
-  }
-
-  pendingRewards(param0: Address): BigInt {
-    let result = super.call(
-      "pendingRewards",
-      "pendingRewards(address):(uint256)",
-      [ethereum.Value.fromAddress(param0)],
-    );
-
-    return result[0].toBigInt();
-  }
-
-  try_pendingRewards(param0: Address): ethereum.CallResult<BigInt> {
-    let result = super.tryCall(
-      "pendingRewards",
-      "pendingRewards(address):(uint256)",
-      [ethereum.Value.fromAddress(param0)],
-    );
-    if (result.reverted) {
-      return new ethereum.CallResult();
-    }
-    let value = result.value;
-    return ethereum.CallResult.fromValue(value[0].toBigInt());
-  }
-
   registeredProviders(param0: Address): boolean {
     let result = super.call(
       "registeredProviders",
@@ -1747,21 +1357,6 @@ export class RPCDataService extends ethereum.SmartContract {
     }
     let value = result.value;
     return ethereum.CallResult.fromValue(value[0].toBoolean());
-  }
-
-  rewardsPool(): BigInt {
-    let result = super.call("rewardsPool", "rewardsPool():(uint256)", []);
-
-    return result[0].toBigInt();
-  }
-
-  try_rewardsPool(): ethereum.CallResult<BigInt> {
-    let result = super.tryCall("rewardsPool", "rewardsPool():(uint256)", []);
-    if (result.reverted) {
-      return new ethereum.CallResult();
-    }
-    let value = result.value;
-    return ethereum.CallResult.fromValue(value[0].toBigInt());
   }
 
   supportedChains(param0: BigInt): RPCDataService__supportedChainsResult {
@@ -1796,29 +1391,6 @@ export class RPCDataService extends ethereum.SmartContract {
       ),
     );
   }
-
-  trustedStateRoots(param0: Bytes): Bytes {
-    let result = super.call(
-      "trustedStateRoots",
-      "trustedStateRoots(bytes32):(bytes32)",
-      [ethereum.Value.fromFixedBytes(param0)],
-    );
-
-    return result[0].toBytes();
-  }
-
-  try_trustedStateRoots(param0: Bytes): ethereum.CallResult<Bytes> {
-    let result = super.tryCall(
-      "trustedStateRoots",
-      "trustedStateRoots(bytes32):(bytes32)",
-      [ethereum.Value.fromFixedBytes(param0)],
-    );
-    if (result.reverted) {
-      return new ethereum.CallResult();
-    }
-    let value = result.value;
-    return ethereum.CallResult.fromValue(value[0].toBytes());
-  }
 }
 
 export class ConstructorCall extends ethereum.Call {
@@ -1852,10 +1424,6 @@ export class ConstructorCall__Inputs {
 
   get pauseGuardian(): Address {
     return this._call.inputValues[3].value.toAddress();
-  }
-
-  get grtToken_(): Address {
-    return this._call.inputValues[4].value.toAddress();
   }
 }
 
@@ -1935,66 +1503,6 @@ export class AddChainCall__Outputs {
   }
 }
 
-export class ApproveProposedChainCall extends ethereum.Call {
-  get inputs(): ApproveProposedChainCall__Inputs {
-    return new ApproveProposedChainCall__Inputs(this);
-  }
-
-  get outputs(): ApproveProposedChainCall__Outputs {
-    return new ApproveProposedChainCall__Outputs(this);
-  }
-}
-
-export class ApproveProposedChainCall__Inputs {
-  _call: ApproveProposedChainCall;
-
-  constructor(call: ApproveProposedChainCall) {
-    this._call = call;
-  }
-
-  get chainId(): BigInt {
-    return this._call.inputValues[0].value.toBigInt();
-  }
-
-  get minProvisionTokens(): BigInt {
-    return this._call.inputValues[1].value.toBigInt();
-  }
-}
-
-export class ApproveProposedChainCall__Outputs {
-  _call: ApproveProposedChainCall;
-
-  constructor(call: ApproveProposedChainCall) {
-    this._call = call;
-  }
-}
-
-export class ClaimRewardsCall extends ethereum.Call {
-  get inputs(): ClaimRewardsCall__Inputs {
-    return new ClaimRewardsCall__Inputs(this);
-  }
-
-  get outputs(): ClaimRewardsCall__Outputs {
-    return new ClaimRewardsCall__Outputs(this);
-  }
-}
-
-export class ClaimRewardsCall__Inputs {
-  _call: ClaimRewardsCall;
-
-  constructor(call: ClaimRewardsCall) {
-    this._call = call;
-  }
-}
-
-export class ClaimRewardsCall__Outputs {
-  _call: ClaimRewardsCall;
-
-  constructor(call: ClaimRewardsCall) {
-    this._call = call;
-  }
-}
-
 export class CollectCall extends ethereum.Call {
   get inputs(): CollectCall__Inputs {
     return new CollectCall__Inputs(this);
@@ -2034,36 +1542,6 @@ export class CollectCall__Outputs {
 
   get fees(): BigInt {
     return this._call.outputValues[0].value.toBigInt();
-  }
-}
-
-export class DepositRewardsPoolCall extends ethereum.Call {
-  get inputs(): DepositRewardsPoolCall__Inputs {
-    return new DepositRewardsPoolCall__Inputs(this);
-  }
-
-  get outputs(): DepositRewardsPoolCall__Outputs {
-    return new DepositRewardsPoolCall__Outputs(this);
-  }
-}
-
-export class DepositRewardsPoolCall__Inputs {
-  _call: DepositRewardsPoolCall;
-
-  constructor(call: DepositRewardsPoolCall) {
-    this._call = call;
-  }
-
-  get amount(): BigInt {
-    return this._call.inputValues[0].value.toBigInt();
-  }
-}
-
-export class DepositRewardsPoolCall__Outputs {
-  _call: DepositRewardsPoolCall;
-
-  constructor(call: DepositRewardsPoolCall) {
-    this._call = call;
   }
 }
 
@@ -2127,36 +1605,6 @@ export class PauseCall__Outputs {
   }
 }
 
-export class ProposeChainCall extends ethereum.Call {
-  get inputs(): ProposeChainCall__Inputs {
-    return new ProposeChainCall__Inputs(this);
-  }
-
-  get outputs(): ProposeChainCall__Outputs {
-    return new ProposeChainCall__Outputs(this);
-  }
-}
-
-export class ProposeChainCall__Inputs {
-  _call: ProposeChainCall;
-
-  constructor(call: ProposeChainCall) {
-    this._call = call;
-  }
-
-  get chainId(): BigInt {
-    return this._call.inputValues[0].value.toBigInt();
-  }
-}
-
-export class ProposeChainCall__Outputs {
-  _call: ProposeChainCall;
-
-  constructor(call: ProposeChainCall) {
-    this._call = call;
-  }
-}
-
 export class RegisterCall extends ethereum.Call {
   get inputs(): RegisterCall__Inputs {
     return new RegisterCall__Inputs(this);
@@ -2187,36 +1635,6 @@ export class RegisterCall__Outputs {
   _call: RegisterCall;
 
   constructor(call: RegisterCall) {
-    this._call = call;
-  }
-}
-
-export class RejectProposedChainCall extends ethereum.Call {
-  get inputs(): RejectProposedChainCall__Inputs {
-    return new RejectProposedChainCall__Inputs(this);
-  }
-
-  get outputs(): RejectProposedChainCall__Outputs {
-    return new RejectProposedChainCall__Outputs(this);
-  }
-}
-
-export class RejectProposedChainCall__Inputs {
-  _call: RejectProposedChainCall;
-
-  constructor(call: RejectProposedChainCall) {
-    this._call = call;
-  }
-
-  get chainId(): BigInt {
-    return this._call.inputValues[0].value.toBigInt();
-  }
-}
-
-export class RejectProposedChainCall__Outputs {
-  _call: RejectProposedChainCall;
-
-  constructor(call: RejectProposedChainCall) {
     this._call = call;
   }
 }
@@ -2337,36 +1755,6 @@ export class SetDefaultMinProvisionCall__Outputs {
   }
 }
 
-export class SetIssuancePerCUCall extends ethereum.Call {
-  get inputs(): SetIssuancePerCUCall__Inputs {
-    return new SetIssuancePerCUCall__Inputs(this);
-  }
-
-  get outputs(): SetIssuancePerCUCall__Outputs {
-    return new SetIssuancePerCUCall__Outputs(this);
-  }
-}
-
-export class SetIssuancePerCUCall__Inputs {
-  _call: SetIssuancePerCUCall;
-
-  constructor(call: SetIssuancePerCUCall) {
-    this._call = call;
-  }
-
-  get rate(): BigInt {
-    return this._call.inputValues[0].value.toBigInt();
-  }
-}
-
-export class SetIssuancePerCUCall__Outputs {
-  _call: SetIssuancePerCUCall;
-
-  constructor(call: SetIssuancePerCUCall) {
-    this._call = call;
-  }
-}
-
 export class SetMinThawingPeriodCall extends ethereum.Call {
   get inputs(): SetMinThawingPeriodCall__Inputs {
     return new SetMinThawingPeriodCall__Inputs(this);
@@ -2397,6 +1785,40 @@ export class SetMinThawingPeriodCall__Outputs {
   }
 }
 
+export class SetPauseGuardianCall extends ethereum.Call {
+  get inputs(): SetPauseGuardianCall__Inputs {
+    return new SetPauseGuardianCall__Inputs(this);
+  }
+
+  get outputs(): SetPauseGuardianCall__Outputs {
+    return new SetPauseGuardianCall__Outputs(this);
+  }
+}
+
+export class SetPauseGuardianCall__Inputs {
+  _call: SetPauseGuardianCall;
+
+  constructor(call: SetPauseGuardianCall) {
+    this._call = call;
+  }
+
+  get guardian(): Address {
+    return this._call.inputValues[0].value.toAddress();
+  }
+
+  get allowed(): boolean {
+    return this._call.inputValues[1].value.toBoolean();
+  }
+}
+
+export class SetPauseGuardianCall__Outputs {
+  _call: SetPauseGuardianCall;
+
+  constructor(call: SetPauseGuardianCall) {
+    this._call = call;
+  }
+}
+
 export class SetPaymentsDestinationCall extends ethereum.Call {
   get inputs(): SetPaymentsDestinationCall__Inputs {
     return new SetPaymentsDestinationCall__Inputs(this);
@@ -2423,74 +1845,6 @@ export class SetPaymentsDestinationCall__Outputs {
   _call: SetPaymentsDestinationCall;
 
   constructor(call: SetPaymentsDestinationCall) {
-    this._call = call;
-  }
-}
-
-export class SetTrustedStateRootCall extends ethereum.Call {
-  get inputs(): SetTrustedStateRootCall__Inputs {
-    return new SetTrustedStateRootCall__Inputs(this);
-  }
-
-  get outputs(): SetTrustedStateRootCall__Outputs {
-    return new SetTrustedStateRootCall__Outputs(this);
-  }
-}
-
-export class SetTrustedStateRootCall__Inputs {
-  _call: SetTrustedStateRootCall;
-
-  constructor(call: SetTrustedStateRootCall) {
-    this._call = call;
-  }
-
-  get blockHash(): Bytes {
-    return this._call.inputValues[0].value.toBytes();
-  }
-
-  get stateRoot(): Bytes {
-    return this._call.inputValues[1].value.toBytes();
-  }
-}
-
-export class SetTrustedStateRootCall__Outputs {
-  _call: SetTrustedStateRootCall;
-
-  constructor(call: SetTrustedStateRootCall) {
-    this._call = call;
-  }
-}
-
-export class SlashCall extends ethereum.Call {
-  get inputs(): SlashCall__Inputs {
-    return new SlashCall__Inputs(this);
-  }
-
-  get outputs(): SlashCall__Outputs {
-    return new SlashCall__Outputs(this);
-  }
-}
-
-export class SlashCall__Inputs {
-  _call: SlashCall;
-
-  constructor(call: SlashCall) {
-    this._call = call;
-  }
-
-  get serviceProvider(): Address {
-    return this._call.inputValues[0].value.toAddress();
-  }
-
-  get data(): Bytes {
-    return this._call.inputValues[1].value.toBytes();
-  }
-}
-
-export class SlashCall__Outputs {
-  _call: SlashCall;
-
-  constructor(call: SlashCall) {
     this._call = call;
   }
 }
@@ -2615,36 +1969,6 @@ export class UnpauseCall__Outputs {
   _call: UnpauseCall;
 
   constructor(call: UnpauseCall) {
-    this._call = call;
-  }
-}
-
-export class WithdrawRewardsPoolCall extends ethereum.Call {
-  get inputs(): WithdrawRewardsPoolCall__Inputs {
-    return new WithdrawRewardsPoolCall__Inputs(this);
-  }
-
-  get outputs(): WithdrawRewardsPoolCall__Outputs {
-    return new WithdrawRewardsPoolCall__Outputs(this);
-  }
-}
-
-export class WithdrawRewardsPoolCall__Inputs {
-  _call: WithdrawRewardsPoolCall;
-
-  constructor(call: WithdrawRewardsPoolCall) {
-    this._call = call;
-  }
-
-  get amount(): BigInt {
-    return this._call.inputValues[0].value.toBigInt();
-  }
-}
-
-export class WithdrawRewardsPoolCall__Outputs {
-  _call: WithdrawRewardsPoolCall;
-
-  constructor(call: WithdrawRewardsPoolCall) {
     this._call = call;
   }
 }

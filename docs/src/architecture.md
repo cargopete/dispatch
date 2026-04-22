@@ -67,7 +67,7 @@ demo/           Self-contained local demo: full payment loop on Anvil
 
 Dispatch is a data service in the Horizon framework. Three Horizon layers are in play:
 
-**HorizonStaking** — indexers call `provision(serviceProvider, RPCDataService, tokens, maxVerifierCut, thawingPeriod)`. Minimum 25,000 GRT, 14-day thawing period.
+**HorizonStaking** — indexers call `provision(serviceProvider, RPCDataService, tokens, maxVerifierCut, thawingPeriod)`. Minimum 10,000 GRT, 14-day thawing period.
 
 **GraphPayments + PaymentsEscrow** — consumers deposit GRT into escrow keyed by `(sender, serviceProvider)`. Every request carries a TAP receipt; the TAP agent batches these into RAVs redeemed via `collect()`.
 

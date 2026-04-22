@@ -59,8 +59,7 @@ contract Deploy is Script {
 
         vm.startBroadcast();
 
-        address grtToken = vm.envAddress("GRT_TOKEN");
-        RPCDataService service = new RPCDataService(owner_, controller, graphTallyCollector, pauseGuardian, grtToken);
+        RPCDataService service = new RPCDataService(owner_, controller, graphTallyCollector, pauseGuardian);
         console2.log("RPCDataService deployed at:", address(service));
 
         for (uint256 i = 0; i < chains.length; i++) {

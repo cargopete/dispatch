@@ -26,11 +26,13 @@ That's the loop.
 | npm packages | ✅ Published (`@lodestar-dispatch/consumer-sdk`, `@lodestar-dispatch/indexer-agent`) |
 | Active providers | ✅ **1** — `https://rpc.cargopete.com` (Arbitrum One, Standard + Archive) |
 | Receipt signing & validation | ✅ Working — every request carries a signed EIP-712 TAP receipt |
+| Response attestation | ✅ Working — provider signs every response; gateway verifies before forwarding |
+| Quorum consensus | ✅ Working — deterministic methods cross-checked across 3 providers |
 | Receipt persistence | ✅ Working — stored in `tap_receipts` table |
 | RAV aggregation (off-chain) | ✅ Working — gateway batches receipts into signed RAVs every 60s |
 | On-chain `collect()` | ✅ Working — GRT settles on-chain automatically every hour |
 | Provider on-chain registration | ✅ Confirmed on-chain |
-| Multi-provider discovery | ❌ Gateway uses static config, not dynamic subgraph discovery yet |
+| Multi-provider discovery | ✅ Working — subgraph-driven dynamic registry |
 | Local demo | ✅ Working — full payment loop on Anvil |
 
 The full payment loop is working end-to-end. Requests generate TAP receipts, the service aggregates them into RAVs every 60s, and calls `RPCDataService.collect()` every hour — pulling GRT from the consumer's escrow to the provider automatically.

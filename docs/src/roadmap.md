@@ -4,60 +4,59 @@ Aligns with The Graph's 2026 Technical Roadmap ("Experimental JSON-RPC Data Serv
 
 ---
 
-## Phase 1 — MVP ✅
+## MVP ✅ Complete
 
+The full working system is shipped. The goal was a minimal, stable payment loop — no dead weight.
+
+**Payment infrastructure**
 - `RPCDataService.sol` — register, startService, stopService, collect
 - `paymentsDestination` — decouple payment recipient from operator key
-- `dispatch-service` — JSON-RPC proxy with TAP receipt validation
-- `dispatch-gateway` — QoS routing, TAP receipt signing, metrics
-- RPC network subgraph
-- Integration tests (real Horizon payment contracts, mock staking only)
+- TAP receipt validation, RAV aggregation, on-chain `collect()`
+- Integration tests against real Horizon payment contracts (mock staking only)
 - EIP-712 cross-language compatibility tests (Solidity ↔ Rust)
+
+**Gateway & routing**
+- QoS routing — latency EMA (35%) + availability (35%) + block freshness (30%)
+- Capability tiers — Standard / Archive / Debug; per-method tier detection
+- Archive tier routing — inspects block parameters (hex numbers, `"earliest"`)
+- `debug_*` / `trace_*` routing — per-chain capability map
+- 10+ chains — Ethereum, Arbitrum, Optimism, Base, Polygon, BNB, Avalanche, zkSync Era, Linea, Scroll
+- CU-weighted pricing — 1–20 CU per method
+- Geographic routing — region-aware score bonus
+- Cross-chain unified `/rpc` endpoint — chain via `X-Chain-Id` header
+- JSON-RPC batch support
+- WebSocket subscriptions — `eth_subscribe` / `eth_unsubscribe` proxied bidirectionally
+- Per-IP rate limiting, Prometheus metrics
+
+**Verification**
+- Response attestation — provider signs every response with operator key; gateway verifies before forwarding
+- Quorum consensus — deterministic methods sent to 3 providers; majority wins; disagreements logged
+
+**Discovery & operations**
+- RPC network subgraph — indexes RPCDataService events for dynamic provider discovery
+- Indexer agent — TypeScript; automates provider lifecycle (register, startService, stopService)
+- Consumer SDK — TypeScript; receipt signing, provider discovery, QoS-weighted selection
 - Docker Compose full-stack deployment
 - CI (Rust + Solidity)
 
-## Phase 2 — Production Foundation ✅
+---
 
-- 10+ chains
-- CU-weighted pricing (1–20 CU per method)
-- QoS scoring with latency, availability, freshness
-- Geographic routing
-- Capability tiers (Standard / Archive / Debug)
-- Dynamic provider discovery via subgraph
-- Per-IP rate limiting
-- Prometheus metrics
-- JSON-RPC batch support
+## Not planned
 
-## Phase 3 — Full Feature Parity ✅
+These were considered and deliberately excluded.
 
-- WebSocket subscriptions (`eth_subscribe` / `eth_unsubscribe`)
-- Archive tier routing (hex block numbers, `"earliest"`)
-- `debug_*` / `trace_*` routing per chain capability
-
-## Phase 4 — Production Readiness ✅
-
-- Cross-chain unified `/rpc` endpoint with `X-Chain-Id` header
-- Indexer agent (`@dispatch/indexer-agent`)
-- Subgraph schema v2
-
-## Phase 5 — Consumer SDK ✅
-
-- Consumer SDK (`@dispatch/consumer-sdk`)
-- Dynamic thawing period governance setter
+| Feature | Why |
+|---|---|
+| `slash()` / fraud proofs | RPC responses have no canonical on-chain truth to slash against |
+| Block header trust oracle | Dependency of slashing; dropped with it |
+| EIP-1186 MPT proof verification | Same |
+| Permissionless chain registration | Governance allowlist is sufficient |
+| GRT issuance / rewards pool | Out of scope for this data service |
 
 ---
 
-## Deployment ✅
+## Potential future work
 
-- Contract deployed on Arbitrum One
-- Subgraph live on The Graph Studio
-- npm packages published
-- e2e tests passing
-- Security review done (2 mediums fixed, redeployed)
-
----
-
-## Deferred
-
-- **TEE-based response verification** — requires enclave hardware and security audit (~6 months minimum)
-- **P2P SDK** — gateway-optional payment model; rethinks trust assumptions end-to-end
+- **TEE-based response verification** — cryptographic correctness via trusted execution; requires enclave hardware and a security audit
+- **P2P SDK** — gateway-optional model; consumer connects directly to provider
+- **Permissionless chain registration** — bond-based governance; deferred until the allowlist becomes a bottleneck

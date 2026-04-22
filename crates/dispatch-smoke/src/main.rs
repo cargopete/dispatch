@@ -24,7 +24,7 @@ use std::time::Instant;
 
 const DEFAULT_ENDPOINT: &str = "https://rpc.cargopete.com";
 const DEFAULT_CHAIN_ID: u64 = 42161;
-const DATA_SERVICE: Address = address!("73846272813065c3e4efdb3fb82e0d128c8c2364");
+const DATA_SERVICE: Address = address!("A983b18B8291F0c317Ba4Fe0dc0f7cc9373AF078");
 const TALLY_COLLECTOR: Address = address!("8f69F5C07477Ac46FBc491B1E6D91E2bb0111A9e");
 const EIP712_CHAIN_ID: u64 = 42161; // Arbitrum One — where GraphTallyCollector lives
 const BASE_PRICE_PER_CU: u128 = 4_000_000_000_000; // 4e-6 GRT per CU

@@ -6,96 +6,56 @@ Aligns with The Graph's 2026 Technical Roadmap ("Experimental JSON-RPC Data Serv
 
 ## Phase 1 — MVP ✅ Complete
 
-**Goal:** Prove the architecture. Minimal viable service on Horizon.
+**Goal:** A minimal, stable, fully working payment loop. Every line of code earns its place.
 
-- [x] `RPCDataService.sol` — register, startService, stopService, collect, slash
+- [x] `RPCDataService.sol` — register, startService, stopService, collect
 - [x] `paymentsDestination` — decouple payment recipient from operator key
 - [x] Explicit `QueryFee` enforcement in `collect()` — revert on other payment types
 - [x] `dispatch-service` (Rust) — JSON-RPC reverse proxy with TAP receipt validation
 - [x] `dispatch-gateway` (Rust) — QoS-aware routing, TAP receipt signing, metrics
-- [x] RPC attestation scheme — `keccak256(method || params || response || blockHash)` signed by indexer
+- [x] Response attestation — provider signs each response with operator key; gateway verifies
+- [x] Quorum consensus — deterministic methods sent to 3 providers; majority result wins; disagreements logged
 - [x] RPC network subgraph — indexes RPCDataService events for provider discovery
-- [x] Integration tests — mock HorizonStaking only; real GraphTallyCollector/PaymentsEscrow/GraphPayments
+- [x] 10+ chains — Ethereum, Arbitrum, Optimism, Base, Polygon, BNB, Avalanche, zkSync Era, Linea, Scroll
+- [x] CU-weighted pricing — per-method compute units (1–20 CU)
+- [x] QoS scoring — latency EMA (35%) + availability (35%) + block freshness (30%)
+- [x] Geographic routing — region-aware score bonus
+- [x] Capability tiers — Standard / Archive / Debug; gateway filters by required tier per method
+- [x] Archive tier routing — inspects block parameters (hex block numbers, `"earliest"`, JSON integers)
+- [x] `debug_*` / `trace_*` routing — per-chain capability map
+- [x] Dynamic provider discovery — subgraph-driven registry with configurable poll interval
+- [x] Per-IP rate limiting — token-bucket via `governor`
+- [x] Prometheus metrics — `dispatch_requests_total`, `dispatch_request_duration_seconds`
+- [x] JSON-RPC batch support — concurrent dispatch, per-item error isolation
+- [x] WebSocket subscriptions — `eth_subscribe` / `eth_unsubscribe` proxied bidirectionally
+- [x] Cross-chain unified `/rpc` endpoint — chain via `X-Chain-Id` header
+- [x] Indexer agent (`indexer-agent/`) — TypeScript; automates register/startService/stopService lifecycle
+- [x] Consumer SDK (`consumer-sdk/`) — TypeScript; receipt signing, provider discovery, QoS selection
+- [x] Integration tests — mock HorizonStaking only; real GraphTallyCollector / PaymentsEscrow / GraphPayments
 - [x] EIP-712 cross-language compatibility tests (Solidity ↔ Rust)
 - [x] Docker Compose full-stack deployment
 - [x] GitHub Actions CI (Rust fmt/clippy/test + Solidity fmt/test)
 
 ---
 
-## Phase 2 — Production Foundation ✅ Complete
+## Deliberately out of scope
 
-Originally targeted Q4 2026. Completed ahead of schedule.
+The following were explored and removed. They are not planned.
 
-- [x] `eth_call` and `eth_getLogs` — multi-provider quorum consensus; minority providers penalised
-- [x] 10+ chains — Ethereum, Arbitrum, Optimism, Base, Polygon, BNB, Avalanche, zkSync Era, Linea, Scroll
-- [x] CU-weighted pricing — per-method compute units (1–20 CU); receipt value = CU × `base_price_per_cu`
-- [x] QoS scoring — latency + availability + freshness, weighted random selection
-- [x] Geographic routing — region-aware score bonus, proximity preference before latency data exists
-- [x] Provider capability tiers — Standard / Archive / Debug; gateway filters by required tier per method
-- [x] Dynamic provider discovery — subgraph-driven registry with configurable poll interval
-- [x] Per-IP rate limiting — token-bucket via `governor`, configurable RPS + burst
-- [x] Prometheus metrics — `dispatch_requests_total`, `dispatch_request_duration_seconds`
-- [x] JSON-RPC batch support — concurrent dispatch, per-item error isolation
+| Feature | Reason removed |
+|---|---|
+| `slash()` / fraud proofs | RPC responses have no canonical on-chain truth to slash against |
+| Block header trust oracle | Required for slashing; dropped with it |
+| EIP-1186 MPT proof verification | Same dependency on slashing infrastructure |
+| Permissionless chain registration (`proposeChain`) | Governance allowlist is sufficient; complexity not warranted |
+| GRT issuance / rewards pool | Protocol-level decision; out of scope for this data service |
 
 ---
 
-## Phase 3 — Full Feature Parity ✅ Complete
+## Potential future work
 
-Originally targeted Q1 2027.
+These are possibilities, not commitments.
 
-- [x] WebSocket subscriptions — `eth_subscribe` / `eth_unsubscribe` proxied bidirectionally
-- [x] Tier 1 fraud proof slashing — `slash()` with EIP-1186 MPT proofs via `StateProofVerifier.sol`
-- [x] Block header trust oracle — `dispatch-oracle` polls L1, submits state roots to Arbitrum for on-chain verification
-- [x] Archive tier routing — `requires_archive()` inspects block parameters; hex block numbers, `"earliest"`, and JSON integers route to Archive tier
-- [x] `debug_*` / `trace_*` routing — per-chain capability map (not global union); providers advertising Debug on chain X are only routed debug requests for chain X
-
----
-
-## Phase 4 — Production Readiness ✅ Complete (except deferred items)
-
-Originally targeted Q2 2027.
-
-- [x] Cross-chain unified `/rpc` endpoint — chain selected via `X-Chain-Id` header; defaults to chain 1
-- [x] Permissionless chain registration — `proposeChain()` locks 100k GRT bond; governance approves/rejects
-- [x] GRT issuance groundwork — `issuancePerCU` storage + `setIssuancePerCU()` governance setter; wiring to RewardsManager is governance-gated (Phase 5)
-- [x] Indexer agent — TypeScript package (`indexer-agent/`) automating register/startService/stopService lifecycle with graceful shutdown
-- [x] Subgraph schema v2 — `Protocol` aggregate entity (total providers, active registrations), `ChainProposal` entity for bond lifecycle
-- [ ] TEE-based response verification — deferred; requires enclave hardware + security audit (~6 months design)
-- [ ] P2P SDK — deferred; rethinks the payment trust model; gateway-optional considered for Phase 5
-
----
-
-## Phase 5 — Consumer SDK & Rewards Pool ✅ Complete
-
-Originally targeted Q3 2027.
-
-- [x] Consumer SDK (`consumer-sdk/`) — TypeScript package for dApp developers
-  - EIP-712 TAP receipt signing (`tap.ts`) — cross-language compatible with provider TAP v2 verification
-  - Subgraph-driven provider discovery (`discovery.ts`) — live registry via GraphQL
-  - Weighted QoS selection (`selector.ts`) — probability proportional to score; EMA update after each request
-  - Attestation verification utilities (`attestation.ts`) — hash computation + signer recovery
-  - `DISPATCHClient` (`client.ts`) — single-call `request()` with automatic receipt signing, provider selection, QoS tracking, and 60s discovery TTL
-- [x] Rewards pool — `depositRewardsPool` / `withdrawRewardsPool` (governance); `claimRewards()` (provider)
-  - Issuance accrues on every `collect()`: `reward = fees × issuancePerCU / 1e18`, capped at remaining pool
-  - `pendingRewards` mapping stores per-recipient unclaimed GRT
-- [x] Dynamic thawing period — `setMinThawingPeriod()` live; lower-bounded by `MIN_THAWING_PERIOD` constant; `collect()` uses `minThawingPeriod` storage variable
-
----
-
-## Before deployment (pre-testnet checklist)
-
-All five phases are feature-complete. The following work remains before a live network run:
-
-- [x] **Contract deployment** — `RPCDataService` deployed on Arbitrum One at `0x73846272813065c3e4efdb3fb82e0d128c8c2364`; 10 chains registered
-- [x] **Subgraph deployment** — deployed to The Graph Studio; endpoint `https://api.studio.thegraph.com/query/1747796/rpc-network/v0.1.1`
-- [x] **End-to-end integration test** — full cycle: consumer → gateway → dispatch-service → backend node → TAP receipt → `RPCDataService.collect()`; 7/7 tests passing
-- [x] **npm publish** — `/consumer-sdk` and `/indexer-agent` published to npm under the `@graph-dispatch` org
-- [x] **Indexer agent tests** — 4/4 Anvil-backed smoke tests passing (idempotent reconcile, stop, start, graceful shutdown)
-- [x] **Light security review** — 2 mediums fixed (cross-chain slash validation, guardian revocation); redeployed at `0x73846272813065c3e4efdb3fb82e0d128c8c2364`
-
----
-
-## Deferred (no current timeline)
-
-- **TEE-based response verification** — enclave hardware + security audit; ~6 months minimum design work
-- **P2P SDK** — gateway-optional payment model; rethinks trust assumptions end-to-end
+- **TEE-based response verification** — cryptographic correctness guarantees via trusted execution; requires enclave hardware and a security audit
+- **P2P SDK** — gateway-optional model; consumer connects directly to provider without a centralised gateway
+- **Permissionless chain registration** — bond-based governance; deferred until the allowlist becomes a bottleneck

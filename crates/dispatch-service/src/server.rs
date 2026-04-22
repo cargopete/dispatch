@@ -1,6 +1,8 @@
 use std::{net::SocketAddr, sync::Arc};
 
+use alloy_primitives::Address;
 use anyhow::Result;
+use k256::ecdsa::SigningKey;
 use tower_http::trace::TraceLayer;
 
 use crate::{
@@ -20,6 +22,10 @@ pub struct AppState {
     pub tap_domain_separator: alloy_primitives::B256,
     /// PostgreSQL pool. None if no database URL was configured.
     pub db_pool: Option<db::Pool>,
+    /// Operator key — signs response attestations.
+    pub signing_key: Arc<SigningKey>,
+    /// Ethereum address derived from signing_key — embedded in attestations.
+    pub signer_address: Address,
 }
 
 pub async fn run(config: Config) -> Result<()> {
@@ -28,6 +34,12 @@ pub async fn run(config: Config) -> Result<()> {
         config.tap.eip712_chain_id,
         config.tap.eip712_verifying_contract,
     );
+
+    let signing_key = {
+        let bytes = hex::decode(config.indexer.operator_private_key.trim_start_matches("0x"))?;
+        SigningKey::from_slice(&bytes)?
+    };
+    let signer_address = dispatch_tap::address_from_key(&signing_key);
 
     let db_pool = if let Some(db_config) = &config.database {
         let pool = db::connect(&db_config.url).await?;
@@ -51,6 +63,8 @@ pub async fn run(config: Config) -> Result<()> {
             .build()?,
         tap_domain_separator,
         db_pool,
+        signing_key: Arc::new(signing_key),
+        signer_address,
     };
 
     let app = routes::router(state).layer(TraceLayer::new_for_http());

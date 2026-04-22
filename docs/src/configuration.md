@@ -10,27 +10,50 @@ host = "0.0.0.0"
 port = 7700
 
 [indexer]
-service_provider_address = "0x..."    # your provider address
-operator_private_key      = "0x..."   # signs response attestations
+# Your on-chain provider address (holds the GRT provision).
+service_provider_address = "0x..."
+
+# 32-byte hex ECDSA private key of your operator key.
+# Signs response attestations and on-chain collect() transactions.
+# Use a dedicated hot key — NOT your wallet or staking key.
+operator_private_key = "0x..."
 
 [tap]
-data_service_address      = "0x73846272813065c3e4efdb3fb82e0d128c8c2364"
-authorized_senders        = ["0x..."] # gateway signer address(es)
-eip712_domain_name        = "TAP"
+# RPCDataService contract address.
+data_service_address      = "0xA983b18B8291F0c317Ba4Fe0dc0f7cc9373AF078"
+
+# Ethereum addresses authorised to send TAP receipts to this service.
+# Derived from the gateway's signer_private_key. Leave empty to accept all.
+authorized_senders        = ["0x..."]
+
+# EIP-712 domain — must match the deployed GraphTallyCollector. Do not change.
+eip712_domain_name        = "GraphTallyCollector"
 eip712_chain_id           = 42161
 eip712_verifying_contract = "0x8f69F5C07477Ac46FBc491B1E6D91E2bb0111A9e"
 
-[database]
-url = "postgres://dispatch:dispatch@localhost/dispatch"
+# Internal URL of your dispatch-gateway (for RAV aggregation).
+aggregator_url            = "http://dispatch-gateway:8080"
+
+# How often to aggregate receipts into RAVs (default: 60s).
+# aggregation_interval_secs = 60
 
 [chains]
-supported = [1, 42161, 10, 8453]
+# Chain IDs this node is registered to serve.
+supported = [1, 42161]
 
 [chains.backends]
-"1"     = "http://localhost:8545"
-"42161" = "http://localhost:8546"
-"10"    = "http://localhost:8547"
-"8453"  = "http://localhost:8548"
+# Internal RPC URL of your Ethereum node for each chain.
+"1"     = "http://eth-node:8545"
+"42161" = "http://arbitrum-node:8545"
+
+[database]
+url = "postgres://dispatch:dispatch@postgres:5432/dispatch"
+
+[collector]
+# Arbitrum One RPC for sending on-chain collect() transactions.
+arbitrum_rpc_url      = "https://arb1.arbitrum.io/rpc"
+collect_interval_secs = 3600   # collect GRT every hour
+# min_collect_value = 0        # skip collect if accumulated value is below this (GRT wei)
 ```
 
 ---
@@ -44,72 +67,54 @@ port   = 8080
 region = "eu-west"   # optional — used for geographic routing bonus
 
 [tap]
-signer_private_key        = "0x..."   # signs TAP receipts
-data_service_address      = "0x73846272813065c3e4efdb3fb82e0d128c8c2364"
-base_price_per_cu         = 4000000000000   # GRT wei per CU (~$40/M requests at $0.09 GRT)
-eip712_domain_name        = "TAP"
+# 32-byte hex ECDSA private key — gateway signs TAP receipts with this.
+# Its derived Ethereum address must be in each provider's authorized_senders list.
+signer_private_key        = "0x..."
+
+# RPCDataService contract address.
+data_service_address      = "0xA983b18B8291F0c317Ba4Fe0dc0f7cc9373AF078"
+
+# GRT wei per compute unit. Default ≈ $40/M requests at $0.09/GRT.
+base_price_per_cu         = 4000000000000
+
+# EIP-712 domain — must match the deployed GraphTallyCollector. Do not change.
+eip712_domain_name        = "GraphTallyCollector"
 eip712_chain_id           = 42161
 eip712_verifying_contract = "0x8f69F5C07477Ac46FBc491B1E6D91E2bb0111A9e"
 
 [qos]
-probe_interval_secs = 10
-concurrent_k        = 3       # dispatch to top-3, return first valid response
-region_bonus        = 0.15    # score boost for same-region providers
-
-[rate_limit]
-requests_per_second = 100
-burst_size          = 200
+probe_interval_secs = 10    # synthetic eth_blockNumber probe period
+concurrent_k        = 3     # dispatch to top-k providers, return first valid response
+region_bonus        = 0.15  # score boost for providers in the same region
 
 [discovery]
-subgraph_url  = "https://api.studio.thegraph.com/query/1747796/rpc-network/v0.1.1"
+# The Graph subgraph URL for dynamic provider discovery.
+subgraph_url  = "https://api.studio.thegraph.com/query/1747796/rpc-network/v0.2.0"
 interval_secs = 60
 
-# Static providers (optional; used as fallback if subgraph is unavailable)
+# Optional: static providers used at startup and as fallback.
 [[providers]]
 address      = "0x..."
 endpoint     = "https://rpc.your-indexer.com"
-chains       = [1, 42161, 10, 8453]
+chains       = [1, 42161]
 region       = "eu-west"
 capabilities = ["standard", "archive"]
 ```
 
 ---
 
-## dispatch-oracle (`oracle.toml`)
-
-```toml
-[oracle]
-poll_interval_secs = 12    # approximately one Ethereum block
-tx_timeout_secs    = 120
-
-[l1]
-rpc_url = "https://eth-mainnet.example.com/YOUR_KEY"
-
-[arbitrum]
-rpc_url              = "https://arb1.arbitrum.io/rpc"
-signer_private_key   = "0x..."   # RPCDataService owner or authorised caller
-data_service_address = "0x73846272813065c3e4efdb3fb82e0d128c8c2364"
-```
-
----
-
 ## Environment variables
 
-`dispatch-service` also reads configuration from environment variables (prefixed `DISPATCH_`):
+`dispatch-service`:
 
 ```bash
-DISPATCH_CONFIG=/etc/dispatch/config.toml     # path to config file
-RUST_LOG=info                                  # log level
+DISPATCH_CONFIG=/etc/dispatch/config.toml   # path to config file (default: config.toml)
+RUST_LOG=info                                # log level: error, warn, info, debug, trace
 ```
 
 `dispatch-gateway`:
 
 ```bash
 DISPATCH_GATEWAY_CONFIG=/etc/dispatch/gateway.toml
-```
-
-`dispatch-oracle`:
-
-```bash
-DISPATCH_ORACLE_CONFIG=/etc/dispatch/oracle.toml
+RUST_LOG=info
 ```

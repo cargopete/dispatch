@@ -2,28 +2,18 @@ import { BigInt } from "@graphprotocol/graph-ts";
 import {
   ChainAdded,
   ChainRemoved,
-  ChainProposed,
-  ChainBondReleased,
-  ChainBondForfeited,
   ProviderRegistered,
   ProviderDeregistered,
   PaymentsDestinationSet,
   ServiceStarted1 as ServiceStarted,
   ServiceStopped1 as ServiceStopped,
-  FraudProofSubmitted,
   MinThawingPeriodSet,
-  RewardsAccrued,
-  RewardsClaimed,
-  RewardsDeposited,
-  RewardsWithdrawn,
 } from "../generated/RPCDataService/RPCDataService";
 import {
   Indexer,
   ChainRegistration,
   SupportedChain,
   Protocol,
-  ChainProposal,
-  RewardBalance,
 } from "../generated/schema";
 
 function loadOrCreateProtocol(timestamp: BigInt): Protocol {
@@ -32,23 +22,10 @@ function loadOrCreateProtocol(timestamp: BigInt): Protocol {
     protocol = new Protocol("1");
     protocol.totalIndexers = 0;
     protocol.totalActiveRegistrations = 0;
-    protocol.rewardsPool = BigInt.fromI32(0);
-    protocol.totalRewardsAccrued = BigInt.fromI32(0);
     protocol.minThawingPeriod = BigInt.fromI32(1209600); // 14 days default
   }
   protocol.updatedAt = timestamp;
   return protocol;
-}
-
-function loadOrCreateRewardBalance(recipient: string, timestamp: BigInt): RewardBalance {
-  let balance = RewardBalance.load(recipient);
-  if (balance == null) {
-    balance = new RewardBalance(recipient);
-    balance.pending = BigInt.fromI32(0);
-    balance.totalClaimed = BigInt.fromI32(0);
-  }
-  balance.updatedAt = timestamp;
-  return balance;
 }
 
 export function handleProviderRegistered(event: ProviderRegistered): void {
@@ -149,74 +126,8 @@ export function handleChainRemoved(event: ChainRemoved): void {
   chain.save();
 }
 
-export function handleChainProposed(event: ChainProposed): void {
-  let proposal = new ChainProposal(event.params.chainId.toString());
-  proposal.chainId = event.params.chainId;
-  proposal.proposer = event.params.proposer;
-  proposal.bondAmount = event.params.bondAmount;
-  proposal.proposedAt = event.block.timestamp;
-  proposal.resolvedAt = null;
-  proposal.save();
-}
-
-export function handleChainBondReleased(event: ChainBondReleased): void {
-  let proposal = ChainProposal.load(event.params.chainId.toString());
-  if (proposal == null) return;
-  proposal.resolvedAt = event.block.timestamp;
-  proposal.approved = true;
-  proposal.save();
-}
-
-export function handleChainBondForfeited(event: ChainBondForfeited): void {
-  let proposal = ChainProposal.load(event.params.chainId.toString());
-  if (proposal == null) return;
-  proposal.resolvedAt = event.block.timestamp;
-  proposal.approved = false;
-  proposal.save();
-}
-
 export function handleMinThawingPeriodSet(event: MinThawingPeriodSet): void {
   let protocol = loadOrCreateProtocol(event.block.timestamp);
   protocol.minThawingPeriod = event.params.period;
   protocol.save();
-}
-
-export function handleRewardsAccrued(event: RewardsAccrued): void {
-  let recipientId = event.params.recipient.toHexString();
-
-  let balance = loadOrCreateRewardBalance(recipientId, event.block.timestamp);
-  balance.recipient = event.params.recipient;
-  balance.pending = balance.pending.plus(event.params.amount);
-  balance.save();
-
-  let protocol = loadOrCreateProtocol(event.block.timestamp);
-  protocol.rewardsPool = protocol.rewardsPool.minus(event.params.amount);
-  protocol.totalRewardsAccrued = protocol.totalRewardsAccrued.plus(event.params.amount);
-  protocol.save();
-}
-
-export function handleRewardsClaimed(event: RewardsClaimed): void {
-  let recipientId = event.params.recipient.toHexString();
-
-  let balance = loadOrCreateRewardBalance(recipientId, event.block.timestamp);
-  balance.pending = balance.pending.minus(event.params.amount);
-  balance.totalClaimed = balance.totalClaimed.plus(event.params.amount);
-  balance.save();
-}
-
-export function handleRewardsDeposited(event: RewardsDeposited): void {
-  let protocol = loadOrCreateProtocol(event.block.timestamp);
-  protocol.rewardsPool = protocol.rewardsPool.plus(event.params.amount);
-  protocol.save();
-}
-
-export function handleRewardsWithdrawn(event: RewardsWithdrawn): void {
-  let protocol = loadOrCreateProtocol(event.block.timestamp);
-  protocol.rewardsPool = protocol.rewardsPool.minus(event.params.amount);
-  protocol.save();
-}
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function handleFraudProofSubmitted(event: FraudProofSubmitted): void {
-  // Slash is authoritative on-chain. Future: add FraudProof entity for audit trail.
 }

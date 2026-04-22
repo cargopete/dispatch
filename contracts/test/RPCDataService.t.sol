@@ -81,7 +81,7 @@ contract RPCDataServiceTest is Test {
     address public provider = makeAddr("provider");
     address public gateway = makeAddr("gateway");
 
-    uint256 constant SUFFICIENT_PROVISION = 25_000e18;
+    uint256 constant SUFFICIENT_PROVISION = 10_000e18;
     uint64 constant SUFFICIENT_THAWING = 14 days;
     uint64 constant CHAIN_ETH_MAINNET = 1;
     uint64 constant CHAIN_ARBITRUM = 42161;

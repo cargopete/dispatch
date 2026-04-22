@@ -91,7 +91,7 @@ contract SetupE2E is Script {
     uint256 internal constant GATEWAY_KEY       = 0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a;
     uint256 internal constant GATEWAY_SIGNER_KEY = 0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6;
 
-    uint256 internal constant SUFFICIENT_PROVISION = 25_000e18;
+    uint256 internal constant SUFFICIENT_PROVISION = 10_000e18;
     uint64  internal constant SUFFICIENT_THAWING   = 14 days;
     uint256 internal constant DEPOSIT              = 100_000e18;
     uint64  internal constant CHAIN_ID             = 31337;
@@ -170,7 +170,7 @@ contract SetupE2E is Script {
 
         // 7. RPCDataService — owner = deployer for the addChain call below.
         RPCDataService service =
-            new RPCDataService(deployer, address(controller), address(tallyCollector), pauseGuardian, address(grt));
+            new RPCDataService(deployer, address(controller), address(tallyCollector), pauseGuardian);
 
         // 8. Provision stake for the provider in the mock staking contract.
         staking.setProvision(provider, address(service), SUFFICIENT_PROVISION, SUFFICIENT_THAWING);

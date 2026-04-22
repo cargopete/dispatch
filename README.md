@@ -24,7 +24,7 @@ Inspired by the [Q3 2026 "Experimental JSON-RPC Data Service"](https://thegraph.
 | RAV aggregation (off-chain) | ✅ Working — gateway `/rav/aggregate` batches receipts into signed RAVs every 60s |
 | On-chain `collect()` | ✅ Working — GRT settles on-chain automatically every hour |
 | Provider on-chain registration | ✅ Confirmed — `registeredProviders[0xb43B...] = true` on Arbitrum One |
-| Multi-provider discovery | ❌ Gateway uses static provider config, not dynamic subgraph discovery |
+| Multi-provider discovery | ✅ Working — gateway polls subgraph every 60s, rebuilds registry dynamically |
 | Local demo | ✅ Working — full payment loop on Anvil with mock contracts |
 
 The full payment loop is working end-to-end on the live provider. Requests generate TAP receipts, the gateway aggregates them into RAVs every 60s, and the service calls `RPCDataService.collect()` every hour — pulling GRT from the consumer's escrow to the provider automatically.
@@ -33,12 +33,12 @@ The full payment loop is working end-to-end on the live provider. Requests gener
 dispatch-smoke
   endpoint   : http://167.235.29.213:7700
   chain_id   : 42161
-  data_svc   : 0x73846272813065c3e4Efdb3Fb82E0d128c8C2364
+  data_svc   : 0xA983b18B8291F0c317Ba4Fe0dc0f7cc9373AF078
   signer     : 0x7D14ae5f20cc2f6421317386Aa8E79e8728353d9
 
   [PASS] GET /health → 200 OK
-  [PASS] eth_blockNumber — returns current block → "0x1b1623cf" [95ms]
-  [PASS] eth_chainId — returns 0x61a9 (42161) → "0xa4b1" [58ms]
+  [PASS] eth_blockNumber — returns current block → "0x1b20574f" [95ms]
+  [PASS] eth_chainId — returns 0xa4b1 (42161) → "0xa4b1" [58ms]
   [PASS] eth_getBalance — returns balance at latest block (Standard) → "0x6f3a59e597c5342" [74ms]
   [PASS] eth_getBalance — historical block (Archive) → "0x0" [629ms]
   [PASS] eth_getLogs — recent block range → [{"address":"0xa62d...}] [61ms]
@@ -46,7 +46,7 @@ dispatch-smoke
   5 passed, 0 failed
 ```
 
-To become the next provider: stake ≥ 25,000 GRT on Arbitrum One, run `dispatch-service` pointing at an Ethereum node, and register via the indexer agent or directly via the contract.
+To become a provider: stake ≥ 10,000 GRT on Arbitrum One, provision it to `RPCDataService`, run `dispatch-service` alongside your Ethereum node, and register via the indexer agent. Full guide: [Running a Provider](docs/src/providers.md).
 
 ---
 
@@ -174,7 +174,7 @@ Install: `npm install /indexer-agent`
 On-chain contract inheriting Horizon's `DataService` + `DataServiceFees` + `DataServicePausable`.
 
 Key functions:
-- `register` — validates provision (≥ 25,000 GRT, ≥ 14-day thawing), stores provider metadata and `paymentsDestination`
+- `register` — validates provision (≥ 10,000 GRT, ≥ 14-day thawing), stores provider metadata and `paymentsDestination`
 - `setPaymentsDestination` — decouple the GRT payment recipient from the operator signing key
 - `startService` — activates provider for a `(chainId, capabilityTier)` pair
 - `stopService` / `deregister` — lifecycle management
@@ -213,9 +213,9 @@ All Horizon contracts live on **Arbitrum One** (chain ID 42161).
 | GraphPayments | `0xb98a3D452E43e40C70F3c0B03C5c7B56A8B3b8CA` |
 | PaymentsEscrow | `0xf6Fcc27aAf1fcD8B254498c9794451d82afC673E` |
 | GraphTallyCollector | `0x8f69F5C07477Ac46FBc491B1E6D91E2bb0111A9e` |
-| RPCDataService | `0x73846272813065c3e4efdb3fb82e0d128c8c2364` |
+| RPCDataService | `0xA983b18B8291F0c317Ba4Fe0dc0f7cc9373AF078` |
 
-Subgraph: `https://api.studio.thegraph.com/query/1747796/rpc-network/v0.1.1`
+Subgraph: `https://api.studio.thegraph.com/query/1747796/rpc-network/v0.2.0`
 
 ---
 
@@ -301,9 +301,9 @@ import { DISPATCHClient } from "@lodestar-dispatch/consumer-sdk";
 
 const client = new DISPATCHClient({
   chainId: 42161,   // Arbitrum One — only live chain currently
-  dataServiceAddress: "0x73846272813065c3e4efdb3fb82e0d128c8c2364",
+  dataServiceAddress: "0xA983b18B8291F0c317Ba4Fe0dc0f7cc9373AF078",
   graphTallyCollector: "0x8f69F5C07477Ac46FBc491B1E6D91E2bb0111A9e",
-  subgraphUrl: "https://api.studio.thegraph.com/query/1747796/rpc-network/v0.1.1",
+  subgraphUrl: "https://api.studio.thegraph.com/query/1747796/rpc-network/v0.2.0",
   signerPrivateKey: process.env.CONSUMER_KEY as `0x${string}`,
   basePricePerCU: 4_000_000_000_000n,
 });
@@ -322,7 +322,7 @@ import { IndexerAgent } from "@lodestar-dispatch/indexer-agent";
 
 const agent = new IndexerAgent({
   arbitrumRpcUrl: "https://arb1.arbitrum.io/rpc",
-  rpcDataServiceAddress: "0x73846272813065c3e4efdb3fb82e0d128c8c2364",
+  rpcDataServiceAddress: "0xA983b18B8291F0c317Ba4Fe0dc0f7cc9373AF078",
   operatorPrivateKey: process.env.OPERATOR_KEY as `0x${string}`,
   providerAddress: "0x...",
   endpoint: "https://rpc.my-indexer.com",
@@ -353,7 +353,7 @@ service_provider_address = "0x..."
 operator_private_key      = "0x..."   # signs on-chain collect() transactions
 
 [tap]
-data_service_address      = "0x73846272813065c3e4efdb3fb82e0d128c8c2364"
+data_service_address      = "0xA983b18B8291F0c317Ba4Fe0dc0f7cc9373AF078"
 authorized_senders        = ["0x..."]  # gateway signer address(es)
 eip712_domain_name        = "GraphTallyCollector"
 eip712_chain_id           = 42161
@@ -382,7 +382,7 @@ region = "eu-west"   # optional — used for geographic routing
 
 [tap]
 signer_private_key    = "0x..."
-data_service_address  = "0x73846272813065c3e4efdb3fb82e0d128c8c2364"
+data_service_address  = "0xA983b18B8291F0c317Ba4Fe0dc0f7cc9373AF078"
 base_price_per_cu     = 4000000000000   # ≈ $40/M requests at $0.09 GRT
 eip712_domain_name    = "GraphTallyCollector"
 eip712_chain_id       = 42161
@@ -394,7 +394,7 @@ concurrent_k        = 3       # dispatch to top-3, first response wins
 region_bonus        = 0.15    # score boost for same-region providers
 
 [discovery]
-subgraph_url  = "https://api.studio.thegraph.com/query/1747796/rpc-network/v0.1.1"
+subgraph_url  = "https://api.studio.thegraph.com/query/1747796/rpc-network/v0.2.0"
 interval_secs = 60
 
 [[providers]]

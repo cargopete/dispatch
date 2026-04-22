@@ -16,7 +16,7 @@ port = 8080
 signer_private_key = "0x0000000000000000000000000000000000000000000000000000000000000000"
 
 # RPCDataService contract address.
-data_service_address = "0x73846272813065c3e4efdb3fb82e0d128c8c2364"
+data_service_address = "0xA983b18B8291F0c317Ba4Fe0dc0f7cc9373AF078"
 
 # EIP-712 domain — must match the deployed GraphTallyCollector.
 eip712_domain_name = "GraphTallyCollector"
@@ -44,7 +44,7 @@ concurrent_k         = 3
 # initial set until the first successful poll.
 #
 [discovery]
-subgraph_url  = "https://api.studio.thegraph.com/query/1747796/rpc-network/v0.1.1"
+subgraph_url  = "https://api.studio.thegraph.com/query/1747796/rpc-network/v0.2.0"
 interval_secs = 60
 
 # ── Rate limiting ──────────────────────────────────────────────────────────

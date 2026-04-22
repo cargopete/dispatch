@@ -1,6 +1,6 @@
-use std::{net::SocketAddr, sync::Arc, time::Instant};
+use std::{collections::HashMap, net::SocketAddr, sync::Arc, time::Instant};
 
-use alloy_primitives::Bytes;
+use alloy_primitives::keccak256;
 use axum::{
     extract::{ConnectInfo, Path, State},
     http::HeaderMap,
@@ -15,6 +15,7 @@ use tokio::task::JoinSet;
 
 use crate::{config::CapabilityTier, error::GatewayError, metrics, registry::Provider, selector, server::AppState};
 use dispatch_tap::create_receipt;
+use alloy_primitives::Bytes;
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -124,6 +125,23 @@ fn required_tier(method: &str, params: &Option<Value>) -> CapabilityTier {
     }
 }
 
+/// Methods whose results are deterministic given the same chain state —
+/// send to quorum_k providers and take the majority response.
+fn requires_quorum(method: &str) -> bool {
+    matches!(
+        method,
+        "eth_call"
+            | "eth_getLogs"
+            | "eth_getBalance"
+            | "eth_getCode"
+            | "eth_getTransactionCount"
+            | "eth_getStorageAt"
+            | "eth_getBlockByHash"
+            | "eth_getTransactionByHash"
+            | "eth_getTransactionReceipt"
+    )
+}
+
 // ---------------------------------------------------------------------------
 // Handler — single and batch
 // ---------------------------------------------------------------------------
@@ -198,14 +216,12 @@ async fn process_request(
 ) -> Result<(JsonRpcResponse, Option<String>), GatewayError> {
     request.validate()?;
 
-    // Load registry snapshot and select candidates — guard dropped before any await.
     let candidates = {
         let registry = state.registry.load();
         let (providers, chain_head) = registry
             .providers_for_chain(chain_id)
             .ok_or(GatewayError::UnsupportedChain(chain_id))?;
 
-        // Filter to providers that support the required capability tier for this chain.
         let tier = required_tier(&request.method, &request.params);
         let capable: Vec<_> = providers
             .iter()
@@ -222,7 +238,11 @@ async fn process_request(
         selector::select(
             &capable,
             chain_head,
-            state.config.qos.concurrent_k,
+            if requires_quorum(&request.method) {
+                state.config.qos.quorum_k
+            } else {
+                state.config.qos.concurrent_k
+            },
             state.config.gateway.region.as_deref(),
             state.config.qos.region_bonus,
         )
@@ -233,8 +253,11 @@ async fn process_request(
 
     let start = Instant::now();
 
-    let (response, attestation, winner) =
-        dispatch_concurrent(state, chain_id, request, &candidates, receipt_value).await?;
+    let (response, attestation, winner) = if requires_quorum(&request.method) {
+        dispatch_quorum(state, chain_id, request, &candidates, receipt_value).await?
+    } else {
+        dispatch_concurrent(state, chain_id, request, &candidates, receipt_value).await?
+    };
 
     let duration = start.elapsed().as_secs_f64();
     let outcome = if response.error.is_some() { "error" } else { "ok" };
@@ -252,7 +275,50 @@ async fn process_request(
 }
 
 // ---------------------------------------------------------------------------
-// Concurrent dispatch — first valid response wins (non-quorum methods)
+// Attestation verification
+// ---------------------------------------------------------------------------
+
+/// Parse and verify the X-Drpc-Attestation header.
+/// Returns the recovered signer address as a string, or None if absent/invalid.
+fn verify_attestation(
+    attestation_header: Option<&str>,
+    chain_id: u64,
+    method: &str,
+    params_json: &str,
+    result_json: &str,
+) -> Option<String> {
+    let header = attestation_header?;
+
+    #[derive(serde::Deserialize)]
+    struct Att { signer: String, signature: String }
+
+    let att: Att = serde_json::from_str(header).ok()?;
+
+    let params_hash = keccak256(params_json.as_bytes());
+    let result_hash = keccak256(result_json.as_bytes());
+    let mut msg = Vec::with_capacity(8 + method.len() + 64);
+    msg.extend_from_slice(&chain_id.to_be_bytes());
+    msg.extend_from_slice(method.as_bytes());
+    msg.extend_from_slice(params_hash.as_slice());
+    msg.extend_from_slice(result_hash.as_slice());
+    let msg_hash = keccak256(&msg);
+
+    let recovered = dispatch_tap::recover_signer(msg_hash, &att.signature).ok()?;
+
+    if recovered.to_string().to_lowercase() != att.signer.to_lowercase() {
+        tracing::warn!(
+            stated = %att.signer,
+            recovered = %recovered,
+            "attestation signer mismatch"
+        );
+        return None;
+    }
+
+    Some(header.to_string())
+}
+
+// ---------------------------------------------------------------------------
+// Concurrent dispatch — first valid response wins (non-deterministic methods)
 // ---------------------------------------------------------------------------
 
 async fn dispatch_concurrent(
@@ -262,6 +328,8 @@ async fn dispatch_concurrent(
     candidates: &[Arc<Provider>],
     receipt_value: u128,
 ) -> Result<(JsonRpcResponse, Option<String>, Arc<Provider>), GatewayError> {
+    let params_json = serde_json::to_string(&request.params).unwrap_or_else(|_| "null".to_string());
+
     let mut set: JoinSet<Result<(JsonRpcResponse, Option<String>, Arc<Provider>), String>> = JoinSet::new();
 
     for provider in candidates {
@@ -271,6 +339,8 @@ async fn dispatch_concurrent(
         let data_service = state.config.tap.data_service_address;
         let req = request.clone();
         let p = provider.clone();
+        let params_json = params_json.clone();
+        let method = request.method.clone();
 
         set.spawn(async move {
             let signed = create_receipt(
@@ -283,9 +353,7 @@ async fn dispatch_concurrent(
             )
             .map_err(|e| e.to_string())?;
 
-            let receipt_header =
-                serde_json::to_string(&signed).map_err(|e| e.to_string())?;
-
+            let receipt_header = serde_json::to_string(&signed).map_err(|e| e.to_string())?;
             let url = format!("{}/rpc/{}", p.endpoint, chain_id);
             let start = Instant::now();
 
@@ -304,7 +372,7 @@ async fn dispatch_concurrent(
                 return Err(format!("HTTP {}", resp.status()));
             }
 
-            let attestation = resp
+            let att_header = resp
                 .headers()
                 .get("x-drpc-attestation")
                 .and_then(|v| v.to_str().ok())
@@ -314,6 +382,20 @@ async fn dispatch_concurrent(
                 .json::<JsonRpcResponse>()
                 .await
                 .map_err(|e| format!("invalid response: {e}"))?;
+
+            let result_json = match (&body.result, &body.error) {
+                (Some(r), _) => serde_json::to_string(r).unwrap_or_else(|_| "null".to_string()),
+                (_, Some(e)) => serde_json::to_string(e).unwrap_or_else(|_| "null".to_string()),
+                _ => "null".to_string(),
+            };
+
+            let attestation = verify_attestation(
+                att_header.as_deref(),
+                chain_id,
+                &method,
+                &params_json,
+                &result_json,
+            );
 
             p.qos.record_success(ms);
             Ok((body, attestation, p))
@@ -332,6 +414,137 @@ async fn dispatch_concurrent(
     }
 
     Err(GatewayError::AllProvidersFailed(chain_id))
+}
+
+// ---------------------------------------------------------------------------
+// Quorum dispatch — majority result wins (deterministic methods)
+// ---------------------------------------------------------------------------
+
+async fn dispatch_quorum(
+    state: &AppState,
+    chain_id: u64,
+    request: &JsonRpcRequest,
+    candidates: &[Arc<Provider>],
+    receipt_value: u128,
+) -> Result<(JsonRpcResponse, Option<String>, Arc<Provider>), GatewayError> {
+    let params_json = serde_json::to_string(&request.params).unwrap_or_else(|_| "null".to_string());
+
+    // Collect all responses concurrently, then take majority.
+    let futures: Vec<_> = candidates.iter().map(|provider| {
+        let client = state.http_client.clone();
+        let signing_key = state.signing_key.clone();
+        let domain_sep = state.tap_domain_separator;
+        let data_service = state.config.tap.data_service_address;
+        let req = request.clone();
+        let p = provider.clone();
+        let params_json = params_json.clone();
+        let method = request.method.clone();
+
+        async move {
+            let signed = create_receipt(
+                &signing_key,
+                domain_sep,
+                data_service,
+                p.address,
+                receipt_value,
+                Bytes::default(),
+            )
+            .map_err(|e| e.to_string())?;
+
+            let receipt_header = serde_json::to_string(&signed).map_err(|e| e.to_string())?;
+            let url = format!("{}/rpc/{}", p.endpoint, chain_id);
+            let start = Instant::now();
+
+            let resp = client
+                .post(&url)
+                .header("TAP-Receipt", receipt_header)
+                .json(&req)
+                .send()
+                .await
+                .map_err(|e| format!("connection failed: {e}"))?;
+
+            let ms = start.elapsed().as_millis() as u64;
+
+            if !resp.status().is_success() {
+                p.qos.record_failure();
+                return Err(format!("HTTP {}", resp.status()));
+            }
+
+            let att_header = resp
+                .headers()
+                .get("x-drpc-attestation")
+                .and_then(|v| v.to_str().ok())
+                .map(|s| s.to_string());
+
+            let body = resp
+                .json::<JsonRpcResponse>()
+                .await
+                .map_err(|e| format!("invalid response: {e}"))?;
+
+            let result_json = match (&body.result, &body.error) {
+                (Some(r), _) => serde_json::to_string(r).unwrap_or_else(|_| "null".to_string()),
+                (_, Some(e)) => serde_json::to_string(e).unwrap_or_else(|_| "null".to_string()),
+                _ => "null".to_string(),
+            };
+
+            let attestation = verify_attestation(
+                att_header.as_deref(),
+                chain_id,
+                &method,
+                &params_json,
+                &result_json,
+            );
+
+            p.qos.record_success(ms);
+            Ok::<_, String>((body, result_json, attestation, p))
+        }
+    }).collect();
+
+    let results: Vec<Result<(JsonRpcResponse, String, Option<String>, Arc<Provider>), String>> =
+        join_all(futures).await;
+
+    // Group successful responses by their serialised result value.
+    let mut buckets: HashMap<String, Vec<(JsonRpcResponse, Option<String>, Arc<Provider>)>> = HashMap::new();
+
+    for r in results {
+        match r {
+            Ok((resp, result_json, att, provider)) => {
+                buckets.entry(result_json).or_default().push((resp, att, provider));
+            }
+            Err(e) => tracing::debug!(error = %e, "quorum provider failed"),
+        }
+    }
+
+    if buckets.is_empty() {
+        return Err(GatewayError::AllProvidersFailed(chain_id));
+    }
+
+    // Pick the bucket with the most votes; log a warning if providers disagreed.
+    let majority_key = buckets
+        .iter()
+        .max_by_key(|(_, v)| v.len())
+        .map(|(k, _)| k.clone())
+        .unwrap();
+
+    if buckets.len() > 1 {
+        tracing::warn!(
+            method = %request.method,
+            chain_id,
+            buckets = buckets.len(),
+            majority_votes = buckets[&majority_key].len(),
+            total = buckets.values().map(|v| v.len()).sum::<usize>(),
+            "quorum disagreement detected"
+        );
+    }
+
+    let (response, attestation, winner) = buckets
+        .remove(&majority_key)
+        .unwrap()
+        .into_iter()
+        .next()
+        .unwrap();
+
+    Ok((response, attestation, winner))
 }
 
 // ---------------------------------------------------------------------------
@@ -377,38 +590,42 @@ mod tests {
 
     #[test]
     fn required_tier_archive_methods() {
-        // Hex block numbers → archive.
         let params_idx1_hex = Some(json!(["0xdeadbeef", "0x100"]));
         assert_eq!(required_tier("eth_getBalance", &params_idx1_hex), CapabilityTier::Archive);
         assert_eq!(required_tier("eth_getCode", &params_idx1_hex), CapabilityTier::Archive);
         assert_eq!(required_tier("eth_getTransactionCount", &params_idx1_hex), CapabilityTier::Archive);
 
-        // "earliest" → archive.
         let params_earliest = Some(json!(["0xdeadbeef", "earliest"]));
         assert_eq!(required_tier("eth_getBalance", &params_earliest), CapabilityTier::Archive);
 
-        // JSON number → archive.
         let params_num = Some(json!(["0xdeadbeef", 1_000_000u64]));
         assert_eq!(required_tier("eth_getBalance", &params_num), CapabilityTier::Archive);
 
-        // eth_getStorageAt — blockTag at index 2.
         let storage = Some(json!(["0xdeadbeef", "0x0", "0x100"]));
         assert_eq!(required_tier("eth_getStorageAt", &storage), CapabilityTier::Archive);
 
-        // eth_call with historical blockTag.
         let call = Some(json!([{"to": "0xabc", "data": "0x"}, "0x100"]));
         assert_eq!(required_tier("eth_call", &call), CapabilityTier::Archive);
 
-        // eth_getBlockByNumber — blockTag at index 0.
         let by_num = Some(json!(["0x100", false]));
         assert_eq!(required_tier("eth_getBlockByNumber", &by_num), CapabilityTier::Archive);
         let by_latest = Some(json!(["latest", false]));
         assert_eq!(required_tier("eth_getBlockByNumber", &by_latest), CapabilityTier::Standard);
 
-        // eth_getLogs with historical fromBlock.
         let logs = Some(json!([{"fromBlock": "0x100", "toBlock": "0x200"}]));
         assert_eq!(required_tier("eth_getLogs", &logs), CapabilityTier::Archive);
         let logs_latest = Some(json!([{"fromBlock": "latest", "toBlock": "latest"}]));
         assert_eq!(required_tier("eth_getLogs", &logs_latest), CapabilityTier::Standard);
+    }
+
+    #[test]
+    fn quorum_methods_are_deterministic() {
+        assert!(requires_quorum("eth_call"));
+        assert!(requires_quorum("eth_getLogs"));
+        assert!(requires_quorum("eth_getBalance"));
+        assert!(requires_quorum("eth_getTransactionReceipt"));
+        assert!(!requires_quorum("eth_blockNumber"));
+        assert!(!requires_quorum("eth_estimateGas"));
+        assert!(!requires_quorum("eth_sendRawTransaction"));
     }
 }

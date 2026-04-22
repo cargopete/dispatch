@@ -1306,6 +1306,7 @@ dependencies = [
  "dispatch-tap",
  "futures-util",
  "hex",
+ "k256",
  "reqwest",
  "serde",
  "serde_json",

@@ -9,6 +9,7 @@ use axum::{
 };
 
 use crate::{
+    attestation,
     db,
     error::ServiceError,
     rpc::{proxy, types::JsonRpcRequest},
@@ -75,5 +76,34 @@ async fn rpc_handler(
         }
     }
 
-    Ok(Json(response).into_response())
+    // --- Sign the response ---
+    let params_json = serde_json::to_string(&request.params).unwrap_or_else(|_| "null".to_string());
+    let result_json = match (&response.result, &response.error) {
+        (Some(r), _) => serde_json::to_string(r).unwrap_or_else(|_| "null".to_string()),
+        (_, Some(e)) => serde_json::to_string(e).unwrap_or_else(|_| "null".to_string()),
+        _ => "null".to_string(),
+    };
+
+    let mut resp = Json(response).into_response();
+
+    match attestation::sign(
+        &state.signing_key,
+        state.signer_address,
+        chain_id,
+        &request.method,
+        &params_json,
+        &result_json,
+    ) {
+        Ok(att) => {
+            if let Ok(header_val) = serde_json::to_string(&att)
+                .map_err(|e| e.to_string())
+                .and_then(|s| s.parse().map_err(|e: axum::http::header::InvalidHeaderValue| e.to_string()))
+            {
+                resp.headers_mut().insert("x-drpc-attestation", header_val);
+            }
+        }
+        Err(e) => tracing::warn!(error = %e, "failed to sign response"),
+    }
+
+    Ok(resp)
 }

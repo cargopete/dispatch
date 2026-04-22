@@ -1,6 +1,6 @@
 # Contract Reference
 
-`RPCDataService` is deployed on Arbitrum One at `0x73846272813065c3e4efdb3fb82e0d128c8c2364`.
+`RPCDataService` is deployed on Arbitrum One at `0xA983b18B8291F0c317Ba4Fe0dc0f7cc9373AF078`.
 
 It inherits Horizon's `DataService` + `DataServiceFees` + `DataServicePausable` and implements `IDataService`.
 
@@ -49,7 +49,7 @@ Redeems a signed RAV for GRT.
 
 ### `addChain(chainId, minProvisionTokens)` / `removeChain(chainId)`
 
-Owner-only chain allowlist management. `minProvisionTokens = 0` uses the protocol default (25,000 GRT).
+Owner-only chain allowlist management. `minProvisionTokens = 0` uses the protocol default (10,000 GRT).
 
 ### `setMinThawingPeriod(period)`
 
@@ -65,6 +65,6 @@ No-op — reverts with "slashing not supported". Present to satisfy the `IDataSe
 
 | Parameter | Value | Notes |
 |---|---|---|
-| Minimum provision | 25,000 GRT | Governance-adjustable per chain |
+| Minimum provision | 10,000 GRT | Governance-adjustable per chain |
 | Minimum thawing period | 14 days | Governance-adjustable, lower-bounded |
 | stakeToFeesRatio | 5 | Same as SubgraphService |

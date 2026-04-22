@@ -30,7 +30,7 @@ contract RPCDataService is Ownable, DataService, DataServiceFees, DataServicePau
     // -------------------------------------------------------------------------
 
     /// @notice Default minimum GRT provision per chain.
-    uint256 public constant DEFAULT_MIN_PROVISION = 25_000e18;
+    uint256 public constant DEFAULT_MIN_PROVISION = 10_000e18;
 
     /// @notice Absolute lower bound on the thawing period.
     uint64 public constant MIN_THAWING_PERIOD = 14 days;
