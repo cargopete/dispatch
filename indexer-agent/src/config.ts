@@ -28,6 +28,8 @@ export interface AgentConfig {
   services: ServiceConfig[];
   /** How often to reconcile on-chain state with desired config (seconds, default: 60) */
   reconcileIntervalSecs?: number;
+  /** Override the EVM chain ID used for transaction signing (default: 42161 for localhost, inferred from URL otherwise) */
+  chainId?: number;
 }
 
 export function loadConfig(path: string): AgentConfig {

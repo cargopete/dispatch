@@ -19,7 +19,7 @@ Registers a new provider.
 
 ### `setPaymentsDestination(destination)`
 
-Changes the GRT recipient for collected fees. The new address takes effect on the next `collect()` call. Callable by a registered provider or their authorised operator at any time.
+Changes the GRT recipient for collected fees. The new address takes effect on the next `collect()` call. Must be called directly by the registered provider address (`msg.sender == serviceProvider`).
 
 ### `startService(serviceProvider, data)`
 

@@ -10,7 +10,7 @@ curl -s -X POST http://167.235.29.213:8080/rpc/42161 \
   -d '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}'
 ```
 
-Every response carries an `x-drpc-attestation` header — an ECDSA signature from the provider over `keccak256(chainId || method || params || response || blockHash)`. You can verify this with the consumer SDK (see [Using the Network](consumers.md)).
+Every response carries an `x-drpc-attestation` header — an ECDSA signature from the provider over `keccak256(chainId || method || keccak256(params) || keccak256(result))`. You can verify this with the consumer SDK (see [Using the Network](consumers.md)).
 
 ---
 

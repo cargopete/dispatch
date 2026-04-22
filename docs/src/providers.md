@@ -269,7 +269,7 @@ Create `agent.config.json`:
 Run it:
 
 ```bash
-AGENT_CONFIG=./agent.config.json npx tsx src/index.ts
+AGENT_CONFIG=./agent.config.json npx dispatch-indexer-agent
 ```
 
 The agent calls `register()`, `startService()` for each entry in `services`, and `stopService()` / `deregister()` on SIGTERM. It reconciles on-chain state against the config on every run — safe to run on a cron or as a persistent daemon.
@@ -440,7 +440,7 @@ After the 14-day thawing period, call `deprovision` to release the tokens back t
 cast send 0xA983b18B8291F0c317Ba4Fe0dc0f7cc9373AF078 \
   "setPaymentsDestination(address)" \
   $NEW_WALLET \
-  --private-key $OPERATOR_KEY \
+  --private-key $PROVIDER_KEY \
   --rpc-url https://arb1.arbitrum.io/rpc
 ```
 

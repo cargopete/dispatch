@@ -37,11 +37,11 @@ Forward to backend Ethereum client (chain_id → backend URL mapping)
         │
         ▼
 Sign response attestation:
-  keccak256(chainId || method || paramsHash || responseHash || blockNumber || blockHash)
+  keccak256(chainId_be8 || method_utf8 || keccak256(params_json) || keccak256(result_json))
         │
         ▼
 Return JSON-RPC response
-  + X-Dispatch-Attestation: <signature>
+  + x-drpc-attestation: {"signer":"0x…","signature":"0x…"}
 ```
 
 ---

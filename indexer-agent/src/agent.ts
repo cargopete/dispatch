@@ -95,7 +95,7 @@ export class IndexerAgent {
       ? arbitrumSepolia
       : url.includes("127.0.0.1") || url.includes("localhost")
       ? defineChain({
-          id: 31337,
+          id: config.chainId ?? 42161,
           name: "Anvil",
           nativeCurrency: { decimals: 18, name: "Ether", symbol: "ETH" },
           rpcUrls: { default: { http: [config.arbitrumRpcUrl] } },

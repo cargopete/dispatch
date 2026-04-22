@@ -159,7 +159,7 @@ Key features:
 - `discoverProviders` — subgraph GraphQL query returning active providers for a given chain and tier
 - `selectProvider` — weighted random selection proportional to QoS score
 
-Install: `npm install /consumer-sdk`
+Install: `npm install @lodestar-dispatch/consumer-sdk`
 
 ### `indexer-agent`
 TypeScript daemon automating the provider lifecycle on-chain.
@@ -168,7 +168,7 @@ TypeScript daemon automating the provider lifecycle on-chain.
 - Calls `register`, `startService`, and `stopService` as needed
 - Graceful shutdown: stops all active registrations before exiting on SIGTERM/SIGINT
 
-Install: `npm install /indexer-agent`
+Install: `npm install @lodestar-dispatch/indexer-agent`
 
 ### `contracts/RPCDataService.sol`
 On-chain contract inheriting Horizon's `DataService` + `DataServiceFees` + `DataServicePausable`.
@@ -317,24 +317,28 @@ const block = await client.request("eth_blockNumber", []);
 npm install @lodestar-dispatch/indexer-agent
 ```
 
-```typescript
-import { IndexerAgent } from "@lodestar-dispatch/indexer-agent";
+Create `agent.config.json`:
 
-const agent = new IndexerAgent({
-  arbitrumRpcUrl: "https://arb1.arbitrum.io/rpc",
-  rpcDataServiceAddress: "0xA983b18B8291F0c317Ba4Fe0dc0f7cc9373AF078",
-  operatorPrivateKey: process.env.OPERATOR_KEY as `0x${string}`,
-  providerAddress: "0x...",
-  endpoint: "https://rpc.my-indexer.com",
-  geoHash: "u1hx",
-  paymentsDestination: "0x...",
-  services: [
-    { chainId: 1,     tier: 0 },
-    { chainId: 42161, tier: 0 },
-  ],
-});
+```json
+{
+  "arbitrumRpcUrl": "https://arb1.arbitrum.io/rpc",
+  "rpcDataServiceAddress": "0xA983b18B8291F0c317Ba4Fe0dc0f7cc9373AF078",
+  "operatorPrivateKey": "0x...",
+  "providerAddress": "0x...",
+  "endpoint": "https://rpc.my-indexer.com",
+  "geoHash": "u1hx",
+  "paymentsDestination": "0x...",
+  "services": [
+    { "chainId": 42161, "tier": 0 },
+    { "chainId": 42161, "tier": 1 }
+  ]
+}
+```
 
-await agent.reconcile(); // call on a cron/interval
+Run as a daemon:
+
+```bash
+AGENT_CONFIG=./agent.config.json npx dispatch-indexer-agent
 ```
 
 ---
@@ -398,11 +402,10 @@ subgraph_url  = "https://api.studio.thegraph.com/query/1747796/rpc-network/v0.2.
 interval_secs = 60
 
 [[providers]]
-address      = "0x..."
-endpoint     = "https://rpc.my-indexer.com"
-chains       = [1, 42161, 10, 8453]
-region       = "eu-west"
-capabilities = ["standard"]   # or ["standard", "archive", "debug"]
+address  = "0x..."
+endpoint = "https://rpc.my-indexer.com"
+chains   = [1, 42161, 10, 8453]
+region   = "eu-west"
 ```
 
 ---

@@ -29,7 +29,7 @@ Dispatch uses [GraphTally (TAP v2)](https://github.com/graphprotocol/graph-impro
 All receipts and RAVs are signed against this domain on Arbitrum One:
 
 ```
-name: protocol-configured
+name: "GraphTallyCollector"
 version: "1"
 chainId: 42161
 verifyingContract: 0x8f69F5C07477Ac46FBc491B1E6D91E2bb0111A9e  // GraphTallyCollector
