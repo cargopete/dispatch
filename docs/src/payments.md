@@ -55,7 +55,7 @@ Request value is proportional to compute units (CUs) — a weight assigned per m
 | `eth_getLogs` (bounded) | 20 |
 | `debug_traceTransaction` | 500+ |
 
-Receipt value = `CU × base_price_per_cu`. Default `base_price_per_cu` is `4_000_000_000_000` GRT wei (~\$40/million requests at \$0.09 GRT).
+Receipt value = `CU x base_price_per_cu`. Default `base_price_per_cu` is `4_000_000_000_000` GRT wei (~\$40/million requests at \$0.09 GRT).
 
 ---
 
@@ -67,13 +67,13 @@ Receipt processing must not slow down requests. In practice:
 |---|---|
 | ECDSA signature verification | ~0.1ms |
 | Receipt storage (async, not on critical path) | ~0ms |
-| **Total overhead** | **<1ms** |
+| **Total overhead** | **&lt;1ms** |
 
 ---
 
 ## Stake locking
 
-On each `collect()`, `RPCDataService` locks `fees × stakeToFeesRatio` in a stake claim via `DataServiceFees._createStakeClaim()`. The claim releases after `thawingPeriod`. This ensures providers maintain sufficient economic stake relative to fees collected.
+On each `collect()`, `RPCDataService` locks `fees x stakeToFeesRatio` in a stake claim via `DataServiceFees._createStakeClaim()`. The claim releases after `thawingPeriod`. This ensures providers maintain sufficient economic stake relative to fees collected.
 
 Default `stakeToFeesRatio` is 5 — consistent with SubgraphService.
 
