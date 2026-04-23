@@ -40,7 +40,7 @@ services:
       postgres:
         condition: service_healthy
     ports:
-      - "7700:7700"
+      - "127.0.0.1:7700:7700"
     volumes:
       - ./config.toml:/etc/dispatch/config.toml:ro
     environment:
@@ -61,7 +61,7 @@ services:
       dispatch-service:
         condition: service_healthy
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     volumes:
       - ./gateway.toml:/etc/dispatch/gateway.toml:ro
     environment:
