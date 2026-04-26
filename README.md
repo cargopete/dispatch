@@ -346,7 +346,7 @@ Configuration via environment variables:
 npm install @lodestar-dispatch/consumer-sdk
 ```
 
-The live gateway is `https://gateway.lodestar-dashboard.com`. All requests require an `X-Consumer-Address` header and a funded GRT escrow — see [docs/consumers.md](docs/src/consumers.md).
+The live gateway is `https://gateway.lodestar-dashboard.com`. All requests require an `X-Consumer-Address` header for billing and rate-limiting. The gateway manages its own on-chain GRT escrow — gateway users do not need to deposit GRT themselves. See [docs/consumers.md](docs/src/consumers.md).
 
 ```typescript
 import { DISPATCHClient } from "@lodestar-dispatch/consumer-sdk";

@@ -192,9 +192,20 @@ collect_interval_secs = 3600   # collect GRT every hour
 
 **`operator_private_key`** — the hot key on this server. Its address must be authorised as an operator in HorizonStaking (step 2c). It signs TAP response attestations and broadcasts on-chain `collect()` transactions, so it needs a small amount of ETH on Arbitrum One for gas.
 
-**`authorized_senders`** — list of gateway signer addresses allowed to send TAP receipts to this service. A gateway's signer address is derived from the `signer_private_key` in its `gateway.toml`. If you're using the public gateway, add its signer address here. Leave empty during initial setup to accept all senders.
+**`authorized_senders`** — list of gateway signer addresses allowed to send TAP receipts to this service. If you're routing traffic through the public Dispatch gateway, add its signer address:
 
-**`aggregator_url`** — the internal URL of your `dispatch-gateway`. The service POSTs raw receipts here every 60 seconds; the gateway aggregates them into signed RAVs and returns them. If you're running your own gateway in Docker Compose, this is `http://dispatch-gateway:8080`.
+```toml
+authorized_senders = ["0x7D14ae5f20cc2f6421317386Aa8E79e8728353d9"]
+```
+
+Leave empty (`[]`) during initial setup to accept receipts from any sender — tighten this once you've confirmed the payment loop is working.
+
+**`aggregator_url`** — the URL the service POSTs raw receipts to every 60 seconds for RAV aggregation. Two options:
+
+- **Using the public Dispatch gateway** (most providers): `aggregator_url = "https://gateway.lodestar-dashboard.com"`
+- **Running your own gateway** (Docker Compose): `aggregator_url = "http://dispatch-gateway:8080"`
+
+The gateway verifies that each receipt was signed by itself, aggregates them into a signed RAV, and returns it for on-chain collection.
 
 **`[collector]`** — when present, `dispatch-service` automatically calls `RPCDataService.collect()` on a timer, pulling GRT from the consumer's escrow to your `paymentsDestination`. If you omit this section, collection does not happen and receipts accumulate without being redeemed.
 
