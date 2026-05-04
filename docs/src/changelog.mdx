@@ -5,6 +5,24 @@ description: Weekly updates to the Dispatch network and tooling
 
 Weekly updates to the Dispatch network and tooling.
 
+## Week of April 27, 2026
+
+### New features
+
+- **Upgradeable `RPCDataService` contract.** The core registry contract is now UUPS-upgradeable, so future protocol improvements can ship without migrating providers to a new address. See [Contracts](https://dispatch.lodestar-dashboard.com/docs/src/contracts).
+- **Provider fee withdrawal.** A new `withdrawFees` flow lets the protocol owner withdraw the 1% retained fee accrued from provider activity, separating retained revenue from burned fees.
+
+### Updates
+
+- **555 GRT minimum provision for providers.** Registering as a provider now requires a 555 GRT provision, replacing the previous lower threshold. New providers should size their stake accordingly. See [Providers](https://dispatch.lodestar-dashboard.com/docs/src/providers).
+- **2% protocol fee on provider activity.** A 2% fee now applies — 1% is burned and 1% is retained by the protocol. See [Payments](https://dispatch.lodestar-dashboard.com/docs/src/payments).
+- **New deployed contract address.** `RPCDataService` is now live at `0x7101...ba0b9` on Arbitrum One. Update any clients, scripts, or integrations that pinned the previous address. See [Deployed addresses](https://dispatch.lodestar-dashboard.com/docs/src/deployed-addresses).
+- **Subgraph v0.3.0.** The Dispatch subgraph has been republished against the new contract with an updated start block. Re-point any queries or dashboards to the new subgraph version.
+
+### Bug fixes
+
+- **Documentation, examples, and the smoke client now reference the new contract address** so getting-started flows and CI checks work out of the box.
+
 ## Week of April 20, 2026
 
 ### New features
